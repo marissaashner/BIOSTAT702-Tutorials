@@ -2,6 +2,8 @@
 
 ## This folder contains all the files you need to run / open the R Tutorials for BIOSTAT 702. 
 
+The primary resource for this course is https://bookdown.org/rwnahhas/RMPH/. All datasets were taken/processed from this text.
+
 ### Instructions for DOWNLOADING the most up to date version of the tutorials: 
 1. Go to https://github.com/marissaashner/BIOSTAT702-Tutorials
 2. Click on the green CODE button 
