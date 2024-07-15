@@ -13,7 +13,7 @@
 
 <meta name="date" content="2024-07-12" />
 
-<title>BIOSTAT702 Table 1 Tutorial</title>
+<title>BIOSTAT702 Descriptive Presentation of Variables Tutorial</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -1497,7 +1497,8 @@ border-radius: 0px;
 
 
 
-<h1 class="title toc-ignore">BIOSTAT702 Table 1 Tutorial</h1>
+<h1 class="title toc-ignore">BIOSTAT702 Descriptive Presentation of
+Variables Tutorial</h1>
 <h4 class="author">Marissa Ashner, PhD</h4>
 <h4 class="date">2024-07-12</h4>
 
@@ -1528,21 +1529,31 @@ body, code.r, pre{
 font-size: 12px;
 }
 </style>
+<p>This tutorial will follow closely with Chapter 3 in the <a href="https://bookdown.org/rwnahhas/RMPH/datasumm.html">textbook</a>.</p>
 <div id="packages" class="section level1">
 <h1>Packages</h1>
 <p>The following code loads the packages you need for the tutorial.</p>
-<pre class="r"><code># for navigating within the R project
+<pre class="r"><code>## NOTE: If you do not have a package installed, you must install it first
+# For example, you can run the following code if you don&#39;t have the gtsummary package:
+# install.packages(&quot;gtsummary&quot;)
+
+
+# for navigating within the R project
 library(here)
 
 # for data wrangling 
 library(tidyverse)
 
 # for creating table 1 as shown in the textbook
-
-# run this code if you don&#39;t have the gtsummary package
-# install.packages(&quot;gtsummary&quot;)
-
 library(gtsummary)</code></pre>
+</div>
+<div id="resources" class="section level1">
+<h1>Resources</h1>
+<p>Below is a list of resources that may be helpful or provide more
+information on this topic.</p>
+<ul>
+<li>XXX</li>
+</ul>
 </div>
 <div id="load-data" class="section level1">
 <h1>Load Data</h1>
@@ -1553,28 +1564,38 @@ load(here(&quot;data/nhanes1718_adult_exam_sub_rmph.Rdata&quot;))
 # rename dataset for convenience 
 nhanes &lt;- nhanes_adult_exam_sub</code></pre>
 </div>
-<div id="creating-a-table-1" class="section level1">
-<h1>Creating a Table 1</h1>
+<div id="examining-the-data" class="section level1">
+<h1>Examining the Data</h1>
+</div>
+<div id="creating-a-table-1-using-gtsummary" class="section level1">
+<h1>Creating a Table 1 using gtsummary</h1>
 <div id="overall" class="section level2">
 <h2>Overall</h2>
-<pre class="r"><code>nhanes %&gt;% 
+<div id="default-settings" class="section level3">
+<h3>Default Settings</h3>
+<pre class="r"><code># Create the Overall Table 1 using gtsummary 
+
+nhanes %&gt;% 
   # Select the variables to be included in the table
   select(sbp, RIDAGEYR, RIAGENDR, income) %&gt;%
-  tbl_summary()</code></pre>
-<div id="yntlcjfybz" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#yntlcjfybz table {
+  tbl_summary(
+    # the following code can be included to override including missing values in the table:
+    # missing = &quot;no&quot;
+  )</code></pre>
+<div id="itxmtismlu" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#itxmtismlu table {
 font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 -webkit-font-smoothing: antialiased;
 -moz-osx-font-smoothing: grayscale;
 }
-#yntlcjfybz thead, #yntlcjfybz tbody, #yntlcjfybz tfoot, #yntlcjfybz tr, #yntlcjfybz td, #yntlcjfybz th {
+#itxmtismlu thead, #itxmtismlu tbody, #itxmtismlu tfoot, #itxmtismlu tr, #itxmtismlu td, #itxmtismlu th {
 border-style: none;
 }
-#yntlcjfybz p {
+#itxmtismlu p {
 margin: 0;
 padding: 0;
 }
-#yntlcjfybz .gt_table {
+#itxmtismlu .gt_table {
 display: table;
 border-collapse: collapse;
 line-height: normal;
@@ -1599,11 +1620,11 @@ border-left-style: none;
 border-left-width: 2px;
 border-left-color: #D3D3D3;
 }
-#yntlcjfybz .gt_caption {
+#itxmtismlu .gt_caption {
 padding-top: 4px;
 padding-bottom: 4px;
 }
-#yntlcjfybz .gt_title {
+#itxmtismlu .gt_title {
 color: #333333;
 font-size: 125%;
 font-weight: initial;
@@ -1614,7 +1635,7 @@ padding-right: 5px;
 border-bottom-color: #FFFFFF;
 border-bottom-width: 0;
 }
-#yntlcjfybz .gt_subtitle {
+#itxmtismlu .gt_subtitle {
 color: #333333;
 font-size: 85%;
 font-weight: initial;
@@ -1625,7 +1646,7 @@ padding-right: 5px;
 border-top-color: #FFFFFF;
 border-top-width: 0;
 }
-#yntlcjfybz .gt_heading {
+#itxmtismlu .gt_heading {
 background-color: #FFFFFF;
 text-align: center;
 border-bottom-color: #FFFFFF;
@@ -1636,12 +1657,12 @@ border-right-style: none;
 border-right-width: 1px;
 border-right-color: #D3D3D3;
 }
-#yntlcjfybz .gt_bottom_border {
+#itxmtismlu .gt_bottom_border {
 border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 }
-#yntlcjfybz .gt_col_headings {
+#itxmtismlu .gt_col_headings {
 border-top-style: solid;
 border-top-width: 2px;
 border-top-color: #D3D3D3;
@@ -1655,7 +1676,7 @@ border-right-style: none;
 border-right-width: 1px;
 border-right-color: #D3D3D3;
 }
-#yntlcjfybz .gt_col_heading {
+#itxmtismlu .gt_col_heading {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -1674,7 +1695,7 @@ padding-left: 5px;
 padding-right: 5px;
 overflow-x: hidden;
 }
-#yntlcjfybz .gt_column_spanner_outer {
+#itxmtismlu .gt_column_spanner_outer {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -1685,13 +1706,13 @@ padding-bottom: 0;
 padding-left: 4px;
 padding-right: 4px;
 }
-#yntlcjfybz .gt_column_spanner_outer:first-child {
+#itxmtismlu .gt_column_spanner_outer:first-child {
 padding-left: 0;
 }
-#yntlcjfybz .gt_column_spanner_outer:last-child {
+#itxmtismlu .gt_column_spanner_outer:last-child {
 padding-right: 0;
 }
-#yntlcjfybz .gt_column_spanner {
+#itxmtismlu .gt_column_spanner {
 border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
@@ -1702,10 +1723,10 @@ overflow-x: hidden;
 display: inline-block;
 width: 100%;
 }
-#yntlcjfybz .gt_spanner_row {
+#itxmtismlu .gt_spanner_row {
 border-bottom-style: hidden;
 }
-#yntlcjfybz .gt_group_heading {
+#itxmtismlu .gt_group_heading {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -1730,7 +1751,7 @@ border-right-color: #D3D3D3;
 vertical-align: middle;
 text-align: left;
 }
-#yntlcjfybz .gt_empty_group_heading {
+#itxmtismlu .gt_empty_group_heading {
 padding: 0.5px;
 color: #333333;
 background-color: #FFFFFF;
@@ -1744,13 +1765,13 @@ border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 vertical-align: middle;
 }
-#yntlcjfybz .gt_from_md > :first-child {
+#itxmtismlu .gt_from_md > :first-child {
 margin-top: 0;
 }
-#yntlcjfybz .gt_from_md > :last-child {
+#itxmtismlu .gt_from_md > :last-child {
 margin-bottom: 0;
 }
-#yntlcjfybz .gt_row {
+#itxmtismlu .gt_row {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -1768,7 +1789,7 @@ border-right-color: #D3D3D3;
 vertical-align: middle;
 overflow-x: hidden;
 }
-#yntlcjfybz .gt_stub {
+#itxmtismlu .gt_stub {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -1780,7 +1801,7 @@ border-right-color: #D3D3D3;
 padding-left: 5px;
 padding-right: 5px;
 }
-#yntlcjfybz .gt_stub_row_group {
+#itxmtismlu .gt_stub_row_group {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -1793,13 +1814,13 @@ padding-left: 5px;
 padding-right: 5px;
 vertical-align: top;
 }
-#yntlcjfybz .gt_row_group_first td {
+#itxmtismlu .gt_row_group_first td {
 border-top-width: 2px;
 }
-#yntlcjfybz .gt_row_group_first th {
+#itxmtismlu .gt_row_group_first th {
 border-top-width: 2px;
 }
-#yntlcjfybz .gt_summary_row {
+#itxmtismlu .gt_summary_row {
 color: #333333;
 background-color: #FFFFFF;
 text-transform: inherit;
@@ -1808,14 +1829,14 @@ padding-bottom: 8px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#yntlcjfybz .gt_first_summary_row {
+#itxmtismlu .gt_first_summary_row {
 border-top-style: solid;
 border-top-color: #D3D3D3;
 }
-#yntlcjfybz .gt_first_summary_row.thick {
+#itxmtismlu .gt_first_summary_row.thick {
 border-top-width: 2px;
 }
-#yntlcjfybz .gt_last_summary_row {
+#itxmtismlu .gt_last_summary_row {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -1824,7 +1845,7 @@ border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 }
-#yntlcjfybz .gt_grand_summary_row {
+#itxmtismlu .gt_grand_summary_row {
 color: #333333;
 background-color: #FFFFFF;
 text-transform: inherit;
@@ -1833,7 +1854,7 @@ padding-bottom: 8px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#yntlcjfybz .gt_first_grand_summary_row {
+#itxmtismlu .gt_first_grand_summary_row {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -1842,7 +1863,7 @@ border-top-style: double;
 border-top-width: 6px;
 border-top-color: #D3D3D3;
 }
-#yntlcjfybz .gt_last_grand_summary_row_top {
+#itxmtismlu .gt_last_grand_summary_row_top {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -1851,10 +1872,10 @@ border-bottom-style: double;
 border-bottom-width: 6px;
 border-bottom-color: #D3D3D3;
 }
-#yntlcjfybz .gt_striped {
+#itxmtismlu .gt_striped {
 background-color: rgba(128, 128, 128, 0.05);
 }
-#yntlcjfybz .gt_table_body {
+#itxmtismlu .gt_table_body {
 border-top-style: solid;
 border-top-width: 2px;
 border-top-color: #D3D3D3;
@@ -1862,7 +1883,7 @@ border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 }
-#yntlcjfybz .gt_footnotes {
+#itxmtismlu .gt_footnotes {
 color: #333333;
 background-color: #FFFFFF;
 border-bottom-style: none;
@@ -1875,7 +1896,7 @@ border-right-style: none;
 border-right-width: 2px;
 border-right-color: #D3D3D3;
 }
-#yntlcjfybz .gt_footnote {
+#itxmtismlu .gt_footnote {
 margin: 0px;
 font-size: 90%;
 padding-top: 4px;
@@ -1883,7 +1904,7 @@ padding-bottom: 4px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#yntlcjfybz .gt_sourcenotes {
+#itxmtismlu .gt_sourcenotes {
 color: #333333;
 background-color: #FFFFFF;
 border-bottom-style: none;
@@ -1896,64 +1917,64 @@ border-right-style: none;
 border-right-width: 2px;
 border-right-color: #D3D3D3;
 }
-#yntlcjfybz .gt_sourcenote {
+#itxmtismlu .gt_sourcenote {
 font-size: 90%;
 padding-top: 4px;
 padding-bottom: 4px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#yntlcjfybz .gt_left {
+#itxmtismlu .gt_left {
 text-align: left;
 }
-#yntlcjfybz .gt_center {
+#itxmtismlu .gt_center {
 text-align: center;
 }
-#yntlcjfybz .gt_right {
+#itxmtismlu .gt_right {
 text-align: right;
 font-variant-numeric: tabular-nums;
 }
-#yntlcjfybz .gt_font_normal {
+#itxmtismlu .gt_font_normal {
 font-weight: normal;
 }
-#yntlcjfybz .gt_font_bold {
+#itxmtismlu .gt_font_bold {
 font-weight: bold;
 }
-#yntlcjfybz .gt_font_italic {
+#itxmtismlu .gt_font_italic {
 font-style: italic;
 }
-#yntlcjfybz .gt_super {
+#itxmtismlu .gt_super {
 font-size: 65%;
 }
-#yntlcjfybz .gt_footnote_marks {
+#itxmtismlu .gt_footnote_marks {
 font-size: 75%;
 vertical-align: 0.4em;
 position: initial;
 }
-#yntlcjfybz .gt_asterisk {
+#itxmtismlu .gt_asterisk {
 font-size: 100%;
 vertical-align: 0;
 }
-#yntlcjfybz .gt_indent_1 {
+#itxmtismlu .gt_indent_1 {
 text-indent: 5px;
 }
-#yntlcjfybz .gt_indent_2 {
+#itxmtismlu .gt_indent_2 {
 text-indent: 10px;
 }
-#yntlcjfybz .gt_indent_3 {
+#itxmtismlu .gt_indent_3 {
 text-indent: 15px;
 }
-#yntlcjfybz .gt_indent_4 {
+#itxmtismlu .gt_indent_4 {
 text-indent: 20px;
 }
-#yntlcjfybz .gt_indent_5 {
+#itxmtismlu .gt_indent_5 {
 text-indent: 25px;
 }
-#yntlcjfybz .katex-display {
+#itxmtismlu .katex-display {
 display: inline-flex !important;
 margin-bottom: 0.75em !important;
 }
-#yntlcjfybz div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#itxmtismlu div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
 height: 0px !important;
 }
 </style>
@@ -1997,6 +2018,23 @@ height: 0px !important;
 </table>
 </div>
 </div>
+<div id="using-the-additional-options-in-tbl_summary" class="section level3">
+<h3>Using the additional options in tbl_summary</h3>
+</div>
+</div>
+<div id="by-exposure-or-outcome" class="section level2">
+<h2>By Exposure or Outcome</h2>
+</div>
+<div id="exporting-to-an-external-file" class="section level2">
+<h2>Exporting to an external file</h2>
+</div>
+<div id="adding-p-values" class="section level2">
+<h2>Adding p-values</h2>
+</div>
+</div>
+<div id="other-packages-to-create-table-1-in-r" class="section level1">
+<h1>Other packages to create Table 1 in R</h1>
+<p>XXX</p>
 </div>
 
 

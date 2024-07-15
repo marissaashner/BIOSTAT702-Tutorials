@@ -1,5 +1,5 @@
 ---
-title: "BIOSTAT702 Table 1 Tutorial"
+title: "BIOSTAT702 Descriptive Presentation of Variables Tutorial"
 author: "Marissa Ashner, PhD"
 date: "2024-07-12"
 output: 
@@ -45,11 +45,18 @@ knitr::opts_chunk$set(echo = TRUE,
                       warning = FALSE)
 ```
 
+This tutorial will follow closely with Chapter 3 in the [textbook](https://bookdown.org/rwnahhas/RMPH/datasumm.html).
+
 # Packages 
 
 The following code loads the packages you need for the tutorial.
 
 ```{r, message = FALSE}
+## NOTE: If you do not have a package installed, you must install it first
+# For example, you can run the following code if you don't have the gtsummary package:
+# install.packages("gtsummary")
+
+
 # for navigating within the R project
 library(here)
 
@@ -57,12 +64,15 @@ library(here)
 library(tidyverse)
 
 # for creating table 1 as shown in the textbook
-
-# run this code if you don't have the gtsummary package
-# install.packages("gtsummary")
-
 library(gtsummary)
 ```
+
+# Resources
+
+Below is a list of resources that may be helpful or provide more information on this topic. 
+
+- XXX
+
 # Load Data 
 
 ```{r}
@@ -74,16 +84,36 @@ load(here("data/nhanes1718_adult_exam_sub_rmph.Rdata"))
 nhanes <- nhanes_adult_exam_sub
 ```
 
-# Creating a Table 1
+# Examining the Data 
+
+# Creating a Table 1 using gtsummary
 
 ## Overall 
 
+### Default Settings 
+
 ```{r}
+# Create the Overall Table 1 using gtsummary 
+
 nhanes %>% 
   # Select the variables to be included in the table
   select(sbp, RIDAGEYR, RIAGENDR, income) %>%
-  tbl_summary()
+  tbl_summary(
+    # the following code can be included to override including missing values in the table:
+    # missing = "no"
+  )
 ```
 
+### Using the additional options in tbl_summary
+
+## By Exposure or Outcome 
+
+## Exporting to an external file 
+
+## Adding p-values 
+
+# Other packages to create Table 1 in R 
+
+XXX 
 
 
