@@ -1,0 +1,5 @@
+"0","# for navigating within the R project
+library(here)
+"
+"2","here() starts at U:/Curriculum Development/BIOSTAT702_R_Tutorials
+"

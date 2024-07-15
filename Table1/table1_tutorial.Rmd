@@ -1,0 +1,89 @@
+---
+title: "BIOSTAT702 Table 1 Tutorial"
+author: "Marissa Ashner, PhD"
+date: "2024-07-12"
+output: 
+  html_document:
+    theme: cosmo
+    fig_width: 7
+    fig_height: 5
+    toc: true
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+---
+
+```{css, echo=FALSE}
+pre {
+  max-height: 300px;
+  overflow-y: auto;
+}
+h1.title{
+  font-size: 30px;
+}
+h1 {
+  font-size: 20px;
+}
+h2{
+  font-size: 16px;
+}
+h3{
+  font-size: 14px;
+}
+h4{
+  font-size: 13px;
+}
+body, code.r, pre{
+  font-size: 12px;
+}
+```
+
+
+```{r setup, include=FALSE}
+# setting global options for code chunks
+knitr::opts_chunk$set(echo = TRUE, 
+                      warning = FALSE)
+```
+
+# Packages 
+
+The following code loads the packages you need for the tutorial.
+
+```{r, message = FALSE}
+# for navigating within the R project
+library(here)
+
+# for data wrangling 
+library(tidyverse)
+
+# for creating table 1 as shown in the textbook
+
+# run this code if you don't have the gtsummary package
+# install.packages("gtsummary")
+
+library(gtsummary)
+```
+# Load Data 
+
+```{r}
+# Load Data 
+# will be called "nhanes_adult_exam_sub" in your environment 
+load(here("data/nhanes1718_adult_exam_sub_rmph.Rdata"))
+
+# rename dataset for convenience 
+nhanes <- nhanes_adult_exam_sub
+```
+
+# Creating a Table 1
+
+## Overall 
+
+```{r}
+nhanes %>% 
+  # Select the variables to be included in the table
+  select(sbp, RIDAGEYR, RIAGENDR, income) %>%
+  tbl_summary()
+```
+
+
+
