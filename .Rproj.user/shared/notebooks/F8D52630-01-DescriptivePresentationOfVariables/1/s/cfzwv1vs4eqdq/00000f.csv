@@ -1,0 +1,7 @@
+"0","# how many complete cases in the SBP variable
+sum(complete.cases(nhanes$sbp))
+"
+"1","[1]"
+"1"," 958"
+"1","
+"

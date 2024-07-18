@@ -1,0 +1,7 @@
+"0","# histogram for the SBP variable in ggplot
+ggplot(data = nhanes) + geom_histogram(aes(x = sbp), 
+                                       col = ""black"", 
+                                       fill = ""white"")
+"
+"1","[38;5;232m`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.[39m
+"
