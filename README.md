@@ -12,11 +12,11 @@ The primary resource for this course is https://bookdown.org/rwnahhas/RMPH/. All
 5. Alternatively, if you are familiar with Github, you can clone / open with Github desktop and will be able to pull updates regularly without re-downloading the zipfile each time
 
 ### Instructions for VIEWING the tutorials: 
-1. Click on any of the individual tutorial folders
+1. Click on any of the individual tutorial folders within the zip file downloaded onto your computer. 
 2. Click on the html file -- it will open in an internet browser for your viewing pleasure
 
 ### Instructions for RUNNING the tutorials: 
-1. Open the R Project "BIOSTAT702_R_Tutorials.Rproj"
+1. Open the R Project "BIOSTAT702_R_Tutorials.Rproj" that is in the zip file downloaded onto your computer. 
 2. Inside the R Project in RStudio, open the Rmd file in any of the individual tutorial folders 
 3. You can "knit" the document to create the html file yourself OR 
 4. You can run each code chunk separately in your RStudio window to play around with the code 
