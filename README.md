@@ -8,7 +8,7 @@ The primary resource for this course is https://bookdown.org/rwnahhas/RMPH/. All
 1. Go to https://github.com/marissaashner/BIOSTAT702-Tutorials
 2. Click on the green CODE button 
 3. Click download zip 
-4. The zip file will download to your computer, containing everything you need 
+4. The zip file will download to your computer, containing everything you need (Note: You may have to "Extract All" files from the zip file in order to gain access to what's inside)
 5. Alternatively, if you are familiar with Github, you can clone / open with Github desktop and will be able to pull updates regularly without re-downloading the zipfile each time
 
 ### Instructions for VIEWING the tutorials: 
