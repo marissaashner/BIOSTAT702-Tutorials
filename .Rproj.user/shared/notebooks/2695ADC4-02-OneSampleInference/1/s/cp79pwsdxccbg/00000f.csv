@@ -1,0 +1,14 @@
+"0","
+# for power analyses 
+library(pwr)
+library(pwrss)
+"
+"2","
+Attaching package: ‘pwrss’
+
+"
+"2","The following object is masked from ‘package:stats’:
+
+    power.t.test
+
+"
