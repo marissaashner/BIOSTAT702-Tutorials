@@ -1,0 +1,6 @@
+"0","ggplot(data = nhanesf) + "
+"0","  geom_histogram(aes(LBDGLUSI)) + "
+"0","  labs(xlab = ""Fasting Glucose (mmol/L)"") + "
+"0","  geom_vline(xintercept = mean(nhanesf$LBDGLUSI))"
+"1","[38;5;232m`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.[39m
+"

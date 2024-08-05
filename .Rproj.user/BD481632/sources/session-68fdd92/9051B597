@@ -1,9 +1,9 @@
 {
     "id": "9051B597",
-    "path": "U:/GitHub/BIOSTAT702-Tutorials/02-OneSampleInference/02-OneSampleInference.Rmd",
-    "project_path": "02-OneSampleInference/02-OneSampleInference.Rmd",
+    "path": "U:/GitHub/BIOSTAT702-Tutorials/03-SimpleLinearRegression/03-SimpleLinearRegression.Rmd",
+    "project_path": "03-SimpleLinearRegression/03-SimpleLinearRegression.Rmd",
     "type": "r_markdown",
-    "hash": "3520107088",
+    "hash": "1507175814",
     "contents": "",
     "dirty": false,
     "created": 1721063075444.0,
@@ -12,16 +12,16 @@
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "73,22",
-        "scrollLine": "58",
-        "last_setup_crc32": "3e44a54583610ddb"
+        "cursorPosition": "140,48",
+        "scrollLine": "133",
+        "last_setup_crc32": "68fdd9283610ddb"
     },
     "folds": "",
-    "lastKnownWriteTime": 1721939604,
+    "lastKnownWriteTime": 1722537713,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1721939606749,
+    "last_content_update": 1722537743531,
     "read_only": false,
     "read_only_alternatives": []
 }

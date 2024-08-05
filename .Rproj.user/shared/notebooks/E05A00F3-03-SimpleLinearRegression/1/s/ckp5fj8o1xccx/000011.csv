@@ -1,0 +1,6 @@
+"0","# Load Data "
+"0","# will be called ""nhanes_adult_exam_sub"" in your environment "
+"0","load(here(""data/nhanes1718_adult_fast_sub_rmph.Rdata""))"
+"0",""
+"0","# rename dataset for convenience "
+"0","nhanesf <- nhanes_adult_fast_sub"
