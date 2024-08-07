@@ -1,0 +1,6 @@
+"0","# fit the model"
+"0","fit2 = lm(mort_adult_f ~ educ_f, data = unhdd)"
+"0",""
+"0","# check linearity assumption"
+"0","crPlots(fit2, pch=20, col=""gray"","
+"0","        smooth = list(smoother= gamLine))"

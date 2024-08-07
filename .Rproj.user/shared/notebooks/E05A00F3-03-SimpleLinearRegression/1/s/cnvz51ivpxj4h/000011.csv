@@ -1,7 +1,0 @@
-"0","fit1_table <- fit1 %>%"
-"0","  tbl_regression(intercept = T,"
-"0","                 estimate_fun = function(x) style_sigfig(x, digits = 4),"
-"0","                 pvalue_fun   = function(x) style_pvalue(x, digits = 3),"
-"0","                 label        = list(BMXWAIST ~ ""Waist circumference (cm)"")) %>%"
-"0","  modify_caption(""Regression of fasting glucose (mmol/L) on waist circumference"")"
-"0","fit1_table"

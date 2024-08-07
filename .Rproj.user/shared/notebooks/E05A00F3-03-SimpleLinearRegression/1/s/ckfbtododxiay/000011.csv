@@ -1,0 +1,12 @@
+"0","apply(residuals_fit1, 2, sd)
+"
+"1","unstandardized_resid "
+"1","  standardized_resid "
+"1","   studentized_resid "
+"1","
+"
+"1","            1.522648 "
+"1","            1.000800 "
+"1","            1.012566 "
+"1","
+"

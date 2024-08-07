@@ -1,0 +1,5 @@
+"0","# fitted = T requests the residual vs. fitted plot"
+"0","# tests = F and quadratic = F suppresses hypothesis tests"
+"0","residualPlots(fit1,"
+"0","              pch=20, col=""gray"", type = ""rstandard"", terms = ~ 1, "
+"0","              fitted = T, tests = F, quadratic = F)"

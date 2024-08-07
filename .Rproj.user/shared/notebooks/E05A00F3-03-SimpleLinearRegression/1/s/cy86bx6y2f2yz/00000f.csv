@@ -1,0 +1,3 @@
+"0","# re-check linearity assumption"
+"0","crPlots(fit2_quadratic, pch=20, col=""gray"","
+"0","        smooth = list(smoother= gamLine))"
