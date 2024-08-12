@@ -1,0 +1,265 @@
+---
+title: 'BIOSTAT 713: Module 4'
+subtitle: 'Estimating the Survival Function: Coding in R'
+author: 'Dr. Marissa Ashner'
+institute: 'Department of Biostatistics and Bioinformatics'
+date: 'Fall 2024'
+output: 
+  beamer_presentation: 
+    latex_engine: xelatex
+    keep_tex: true
+header-includes: 
+  - \titlegraphic{\includegraphics[width=0.3\paperwidth]{../latex_dependencies/duke_som_pic.png}}
+  - "\\usepackage{fontspec}"
+  - "\\definecolor{dukeblue}{HTML}{003087}"
+  - "\\setsansfont{Times New Roman}"
+  - "\\setbeamercolor{structure}{fg=dukeblue}"
+  - "\\setbeamercolor{title}{fg=dukeblue}"
+  - "\\setbeamertemplate{navigation symbols}{}"
+  - "\\setbeamertemplate{footline}[frame number]"
+---
+
+
+```{r setup, echo=FALSE, include=FALSE, warning=FALSE}
+knitr::opts_chunk$set(warning=FALSE, fig.width=5, fig.height=3.5)
+
+##########################################################################
+##                                                                        ##
+##  Author: Marissa Ashner, marissa.ashner@duke.edu                     
+##
+##  Program: BIOSTAT713_Module4.rmd                            ##
+##  Purpose: This program performs analyses to support class notes
+##    
+##                                                                        ##
+##  Input files:  XXX                                       
+##
+##                                                                        ##
+##  Output files: BIOSTAT713_Module4.pdf                      ##
+##                                                                        ##
+##  Change Log:                                                           ##
+##  5/16/2024 File started                                               ##
+##  7/02/2024 add page numbers, Change url color, other small edits                   
+##  7/03/2024 add pre-reading material for next module         
+##  7/16/2024 Add Module Exercises 
+##
+########################################################################## 
+
+# setwd()
+library(tidyverse)
+library(ggplot2)
+library(cowplot)
+library(lubridate)
+library(knitr)
+library(survival) 
+library(survminer)
+library(ggsurvfit)
+
+options(knitr.kable.NA="")
+options(max.print = .Machine$integer.max)  # don't limit console printing
+
+rm(list=ls())
+```
+
+
+# Module Goals
+
+-   Create survival objects and Kaplan Meier estimates/plots in R 
+-   Understand the Nelson-Aalen estimator for the cumulative hazard function 
+-   Be able to find the median survival time based on a nonparametric survival curve
+
+
+# Resources for this Module 
+
+### From Canvas 
+
+-   Applied Survival Analysis in R: Chapter 3
+-   Klein and Moeschberger: Chapter 4 
+-   Pocock Survival Plots: Good Practice and Pitfalls   
+    -   **This was required pre-reading for this module**
+    
+### Websites 
+
+-   [\textcolor{blue}{\underline{survminer cheatsheet}}](https://rpkgs.datanovia.com/survminer/survminer_cheatsheet.pdf)
+-   [\textcolor{blue}{\underline{Breslow, FH, and KM Formulas}}](https://support.sas.com/documentation/cdl/en/statug/68162/HTML/default/viewer.htm#statug_lifetest_details03.htm)
+-   [\textcolor{blue}{\underline{Toward Data Science article on KM Curves}}](https://towardsdatascience.com/survival-analysis-in-clinical-trials-f87b8cbc2b1a)
+-   [\textcolor{blue}{\underline{Toward Data Science article on Log-Rank Tests}}](https://towardsdatascience.com/survival-analysis-in-clinical-trials-log-rank-test-8f1229e7f0f0)
+    -   **This will be required pre-reading for next module**
+
+
+
+# Pre-Reading Quiz 
+
+-   Do the authors recommend survival plots going up or down?
+-   The authors recommend extending the survival plot until about what percentage of individuals are still in follow-up?
+-   Should you include measures of statistical uncertainty in your survival plot? 
+-   What is the secret word? 
+
+
+# Survival Analysis in R 
+
+## Please install the following packages 
+
+\begin{itemize}
+  \item Primary package needed: \texttt{survival} 
+  \item Helpful for plots: \texttt{survminer}
+  \item Helpful for plots: \texttt{ggsurvfit}
+  \item Helpful for sample size calculations: \texttt{powerSurvEpi} (won't need yet)
+  \item Helpful for some modeling: \texttt{flexsurv} (won't need yet)
+\end{itemize}
+
+# General Syntax
+
+## Creating a Survival Object 
+The \texttt{survival} package requires a specific format for a censored event time variable that can be created using the \texttt{Surv()} function.
+
+\vspace{0.25in}
+
+We need two things to create the survival object: (1) the observed time $U$ and (2) the event indicator $\Delta$
+
+# General Syntax
+
+## Using our Toy Example from Module 3
+
+\small
+
+```{r}
+# creating the data frame
+surv_data_toy = data.frame(time = c(3, 4, 7, 9, 9, 11, 20), 
+                           event = c(1, 1, 0, 1, 1, 0, 1))
+
+# creating the survival object 
+surv_object = Surv(surv_data_toy$time, surv_data_toy$event)
+surv_object
+```
+\normalsize
+
+# Kaplan Meier Estimates in R
+
+## We can use the \texttt{survfit()} function to find the KM estimates 
+
+\tiny
+
+```{r}
+km_toy = survfit(surv_object ~ 1,
+                 data = surv_data_toy, 
+                 conf.type = "log" # the default
+                 )
+
+summary(km_toy)
+```
+
+\normalsize
+
+# Kaplan Meier Curves in R: \texttt{survminer}
+
+\tiny
+
+```{r,  out.width="80%", out.height="60%"}
+# Plotting KM curve using ggsurvplot
+ggsurvplot(km_toy, data = surv_data_toy,
+           conf.int = TRUE, # note these are pointwise CI
+           risk.table = TRUE,
+           tables.height = 0.35,
+           legend = "none")
+```
+\normalsize
+
+# Kaplan Meier Curves in R: \texttt{ggsurvfit}
+
+\tiny
+
+```{r,  out.width="80%", out.height="60%"}
+# Plotting KM curve using ggsurvfit
+ggsurvfit(km_toy) + 
+  add_confidence_interval() + 
+  add_risktable()
+```
+\normalsize
+
+# The Nelson-Aalen Estimator 
+
+## There is *another* way to estimate the survival function nonparametrically aside from the KM estimator
+
+The Nelson-Aalen estimator is actually a direct estimator for the cumulative hazard function $H(t)$, which can be transformed into an estimate for $S(t)$ based on the relationship between the two functions 
+
+# The Nelson-Aalen Estimator 
+
+\begin{itemize}
+\item $H(t)$ is the cumulative risk of an event occurring at some point up to time $t$;
+\item $d_j$ is the number of events at time $t_j$; and 
+\item $n_j$ is the number of people at risk just before time $t_j$
+\end{itemize}
+
+$$\hat{H}_{NA}(t) = \sum_{j=1}^k \frac{d_j}{n_j}, t_k\leq t < t_{k+1}$$
+
+Then, the NA, or **Breslow** estimator for the survival function is 
+
+$$\hat{S}_{NA}(t) = \exp\left(-\hat{H}_{NA}(t)\right) = \prod_{j=1}^k \exp\left(-\frac{d_j}{n_j}\right)$$
+
+# Nelson-Aalen in R
+
+\tiny
+
+```{r}
+# NA estimate in R 
+# in the survfit function, set stype = 2, so the survival will be calcuated from 
+# the negative exponential of the cumulative hazard 
+# ctype controls how the cumulative hazard is estimated. ctype = 1 (default) 
+# is the NA and ctype = 2 involves a correction for tied events (FH method)
+na_toy = survfit(surv_object ~ 1,
+                 data = surv_data_toy, 
+                 stype = 2,
+                 ctype = 1)
+
+summary(na_toy)
+```
+\normalsize
+
+# Which to use? NA or KM? 
+
+\begin{itemize}
+\item Both estimators are consistent and asymptotically equivalent 
+\item Nelson-Aalen: better small sample performance 
+\item Kaplan Meier: known as the standard estimator of the survival function 
+\begin{itemize}
+\item Use KM for descriptive plots 
+\end{itemize}
+\end{itemize}
+
+# Estimating Median Survival Time 
+
+The **median survival time** is often reported along with a KM Curve as a descriptive statistic.
+
+We want to find the time such that $S(t_m) = 0.5$. There may not be an *exact* estimate for $t_m$ since the KM estimator is a step function. 
+
+$$\hat{t}_m = \min\{t_k | \hat{S}(t_k) \leq 0.5 \}$$
+where $t_k$ is the $k$th ordered event time.
+
+# Estimating Median Survival Time in R
+
+Simply outputting your survfit object will show the estimate for the median and a corresponding 95\% CI found using the Delta Method.
+
+\tiny 
+
+```{r}
+km_toy
+```
+
+\normalsize
+
+# Q \& A 
+
+## Use the Q \& A feature on Slido to ask questions or upvote your classmates' questions! 
+
+# Module Exercises 
+
+## Consider the following 'event times' where any starred times are censored (same as in Module 3 exercises): 
+
+\begin{center}
+1 \hspace{0.1in} 2 \hspace{0.1in} 4* \hspace{0.1in}  5* \hspace{0.1in}  7 \hspace{0.1in}  8*  \hspace{0.1in}  9 \hspace{0.1in} 9 \hspace{0.1in} 11* \hspace{0.1in} 13
+\end{center}
+
+\begin{enumerate}
+\item Create a KM Curve for this data 
+\item Calculate and output the Nelson-Aalen estimates for $S(t)$ 
+\end{enumerate}

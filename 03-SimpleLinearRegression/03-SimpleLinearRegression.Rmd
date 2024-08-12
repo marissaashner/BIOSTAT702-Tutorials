@@ -2,7 +2,7 @@
 title: "BIOSTAT702 R Tutorial 3: "
 subtitle: "Simple Linear Regression"
 author: "Marissa Ashner, PhD"
-date: "Last Updated: 2024-08-07"
+date: "Last Updated: 2024-08-12"
 output: 
   html_document:
     theme: cosmo
@@ -84,6 +84,7 @@ library(olsrr)
 Below is a list of resources that may be helpful or provide more information on this topic. 
 
 - [Applet for Least Squares Illustration](https://www.rossmanchance.com/applets/2021/regshuffle/regshuffle.htm)
+- [Guide to Regression Diagnostics with R](https://sscc.wisc.edu/sscc/pubs/RegDiag-R/index.html)
 
 # Load Data 
 

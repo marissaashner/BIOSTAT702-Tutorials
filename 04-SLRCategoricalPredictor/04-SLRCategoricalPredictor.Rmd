@@ -1,0 +1,419 @@
+---
+title: "BIOSTAT702 R Tutorial 4: "
+subtitle: "Simple Linear Regression with a Categorical Predictor"
+author: "Marissa Ashner, PhD"
+date: "Last Updated: 2024-08-12"
+output: 
+  html_document:
+    theme: cosmo
+    fig_width: 7
+    fig_height: 5
+    toc: true
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+---
+
+```{css, echo=FALSE}
+pre {
+  max-height: 300px;
+  overflow-y: auto;
+}
+h1.title{
+  font-size: 30px;
+  font-weight: bold;
+  margin-bottom: 0px;
+}
+h1 {
+  font-size: 20px;
+}
+h2{
+  font-size: 16px;
+}
+h3.subtitle {
+  font-size: 25px;
+  font-style: italic;
+  margin-top: 3px;
+}
+h3{
+  font-size: 14px;
+}
+h4{
+  font-size: 13px;
+}
+body, code.r, pre{
+  font-size: 12px;
+}
+```
+
+
+```{r setup, include=FALSE}
+# setting global options for code chunks
+knitr::opts_chunk$set(echo = TRUE, 
+                      warning = FALSE)
+```
+
+This tutorial will follow closely with parts of Chapters 4 and 5 in the [textbook](https://bookdown.org/rwnahhas/RMPH/datasumm.html).
+
+# Packages 
+
+The following code loads the packages you need for the tutorial.
+
+```{r, message = FALSE}
+## NOTE: If you do not have a package installed, you must install it first
+# For example, you can run the following code if you don't have the gtsummary package:
+# install.packages("gtsummary")
+
+
+# for navigating within the R project
+library(here)
+
+# for data wrangling 
+library(tidyverse)
+
+# for nice-looking tables 
+library(gtsummary)
+
+# for ANOVA tests / diagnostics
+library(car)
+library(olsrr)
+
+# for contrasts 
+library(doBy)
+```
+
+# Resources
+
+Below is a list of resources that may be helpful or provide more information on this topic. 
+
+- [Guide to Regression Diagnostics with R](https://sscc.wisc.edu/sscc/pubs/RegDiag-R/index.html)
+
+# Load Data 
+
+The dataset used for this tutorial is loaded here.
+
+```{r}
+# Load Data 
+# will be called "nhanes_adult_exam_sub" in your environment 
+load(here("data/nhanes1718_adult_fast_sub_rmph.Rdata"))
+
+# rename dataset for convenience 
+nhanesf <- nhanes_adult_fast_sub
+```
+
+# Visualize the Data 
+
+From the NHANES dataset, we will investigate how the mean fasting glucose varies with smoking status (categorical variable). The first thing to do is visualize the data.
+
+## Visualizing the Distribution of the Predictor 
+
+Rather than visualizing the distribution of the predictor, we can simply look at the number in each group using a table.
+
+```{r, message = FALSE}
+table(nhanesf$smoker, useNA = "ifany")
+```
+
+## Visualizing the Relationship between the Predictor and Outcome 
+
+When the predictor is categorical, rather than fitting a straight line across all values, simple linear regression estimates the mean outcome at each level of the predictor. We can visualize this using boxplots.
+
+```{r, message = TRUE}
+# Plot the scatterplot
+ggplot(data = nhanesf) + geom_point(aes(smoker, LBDGLUSI))
+
+# Plot the scatterplot with an appended means and connected lines
+ggplot(data = nhanesf, aes(smoker, LBDGLUSI)) + geom_point() + 
+  geom_boxplot()
+```
+
+# Fitting the Linear Model 
+
+We can still run the `lm()` function to fit a simple linear regression model with a categorical predictor in the same way we would with a continuous predictor. Make sure your predictor is a factor variable before fitting the linear model. If it is not, you can use the `as.factor()` function to convert it. You can see that there are three regression coefficients total instead of just two. That is because R automatically creates dummy variables when a categorical predictor is input to the model. 
+
+```{r}
+# check class of predictor
+class(nhanesf$smoker)
+
+# fit the model 
+fit1 <- lm(LBDGLUSI ~ smoker, data = nhanesf)
+
+# output the results 
+summary(fit1)
+```
+## Factor Levels 
+
+By default, R sets the reference level to be the first level of the predictor. You can check this using the `levels()` function if you predictor is a factor. This tells us that "Never" is the reference level. 
+
+```{r}
+levels(nhanesf$smoker)
+```
+
+If you want to change the reference level, you can use the `relevel()` function in R. 
+
+```{r}
+nhanesf$smoker_relevel = relevel(nhanesf$smoker, ref = "Past")
+
+fit1_relevel = lm(LBDGLUSI ~ smoker_relevel, data = nhanesf)
+summary(fit1_relevel)
+```
+
+
+
+# Inference for models with a categorical predictor 
+
+You probably noticed that in the summary output for our model with a categorical predictor, we obtained multiple p-values for the smoker predictor. These come from the Wald-type t-tests run on *each* dummy variable. If you want to test the significance of the smoker predictor as a whole, rather than each dummy variable compared to the reference, you can refer to the F-statistic from the model. 
+
+Unlike for the continuous predictor model, this F-test is not equivalent to the t-tests. The F-test is a global test of significance across all predictors. When your predictor is continuous (OR binary) and there is only one coefficient aside from the intercept, these two are equivalent. Otherwise, they test different things. 
+
+## F-Test from lm() 
+
+Use the following code to get the F-test information from `lm()`.
+
+```{r}
+fit1_summary = summary(fit1)
+fit1_summary$fstatistic
+```
+## F-Test from anova()
+
+The F-test from `lm()` will be equivalent to the one from `anova()`. 
+
+```{r}
+anova(fit1)
+```
+## F-Test from Anova() 
+
+There is another function called `Anova()` in the `car` package that can test the significance of a categorical predictor without running a global test, using what is called a Type III test. This will be important for multivariable linear regression, but right now will get us the same answer as the other F-tests. 
+
+```{r}
+Anova(fit1, type = 3)
+```
+
+## Contrasts 
+
+Contrasts are linear combinations of the parameters in an SLR model, and we can run tests in R for these. I will show an example testing any difference between the groups (i.e., that the two non-intercept regression coefficients are both equal to 0). I usually like to use the `esticon()` function in the `doBy` package.
+
+The hypothesis is the same being tested in the `Anova()` function above, and we can see that the p-values are almost identical. 
+
+```{r}
+# create matrix of coefficients to test 
+# first row tests beta1 = 0
+# second row tests beta2 = 0
+L = rbind(c(0, 1, 0), c(0, 0, 1))
+
+esticon(fit1, L, conf.int = TRUE, joint.test = TRUE)
+```
+
+
+## Nice-Looking Summary Table 
+
+The `gtsummary` package can be used to create a more aesthetically pleasing table. You can then export this to a word document. You can add the Type III global test to the table as well. 
+
+```{r}
+fit1_table <- fit1 %>%
+  tbl_regression(intercept = T,
+                 estimate_fun = function(x) style_sigfig(x, digits = 4),
+                 pvalue_fun   = function(x) style_pvalue(x, digits = 3),
+                 label        = list(smoker ~ "Smoking Status")) %>%
+  add_global_p(keep = TRUE) %>% 
+  modify_caption("Regression of fasting glucose (mmol/L) on smoking status")
+fit1_table
+```
+
+```{r}
+fit1_table %>%
+  as_flex_table() %>%
+  flextable::save_as_docx(path = here("04-SLRCategoricalPredictor", 
+                           "04-fit1table.docx"))
+```
+
+
+# Predictions from the Model 
+
+You can use the `predict()` function to output the predicted outcome with a certain level of the predictor. You can include a confidence interval, prediction interval, or neither. Prediction intervals are wider than confidence intervals because they account for the additional uncertainty surrounding an individual prediction, where confidence intervals describe the confidence around the mean. 
+
+```{r}
+predict(fit1,
+        newdata = data.frame(smoker = "Current"),
+        interval = "confidence")
+
+predict(fit1,
+        newdata = data.frame(smoker = "Current"),
+        interval = "prediction")
+```
+
+We can add the confidence intervals or prediction intervals to our scatterplot as shown below. 
+
+```{r, message = FALSE}
+# Confidence Intervals
+ci_pred = predict(fit1, newdata = nhanesf, 
+                  interval = "confidence") %>% cbind(nhanesf)
+
+ggplot(data = ci_pred, aes(smoker, LBDGLUSI)) + geom_point() + 
+  geom_point(aes(smoker, fit), color = "red", size = 2) + 
+  geom_errorbar(aes(ymin = lwr, ymax = upr), color = "red", width = 0.2)
+
+# Prediction Intervals
+pi_pred = predict(fit1, newdata = nhanesf, 
+                  interval = "prediction") %>% cbind(nhanesf)
+
+ggplot(data = pi_pred, aes(smoker, LBDGLUSI)) + geom_point() + 
+  geom_point(aes(smoker, fit), color = "red", size = 2) + 
+  geom_errorbar(aes(ymin = lwr, ymax = upr), color = "red", width = 0.2)
+```
+
+
+# Residuals and Diagnostics 
+
+All residuals and diagnostic tests can be done in the same way as with a continuous predictor, with the exception of the linearity assumption, which does not need to be tested here. I use the same code as I did with the continuous predictor below to show what the output looks like with a categorical variable instead. 
+
+## Different types of Residuals 
+
+```{r}
+# compare the three types of residuals
+
+# compare average / quantiles 
+residuals_fit1 = data.frame(
+  unstandardized_resid = residuals(fit1),
+  standardized_resid = rstandard(fit1),
+  studentized_resid = rstudent(fit1)
+)
+summary(residuals_fit1)
+
+# compare standard deviations
+apply(residuals_fit1, 2, sd)
+```
+## Testing the Normality Assumption 
+
+It is recommended to test this assumption visually using QQ plots and histograms of the residuals.
+
+### Q-Q Plot of Residuals  
+
+The closer the points are to the black line, the better the normality assumption is met.
+
+```{r}
+ggplot(residuals_fit1, aes(sample = standardized_resid)) +
+  stat_qq(size = 2.5, color = 'red') +
+  stat_qq_line()
+```
+
+### Histogram of Residuals 
+
+In the histogram below, the red solid line provides a smoothed estimate of the distribution of the observed residuals. The blue dashed line is the best fit normal curve based on the mean and standard deviation of the residuals. The closer these two curves are to each other, the better the normality assumption is met.
+
+```{r}
+# Create the histogram with the empirical density and normal curve
+ggplot(residuals_fit1, aes(x = standardized_resid)) +
+  geom_histogram(aes(y = ..density..), binwidth = 0.5, 
+                 fill = "grey", color = "black") +
+  geom_density(color = "red", size = 1.5) +
+  stat_function(fun = dnorm, 
+                args = list(mean = mean(residuals_fit1$standardized_resid, na.rm = TRUE),
+                            sd = sd(residuals_fit1$standardized_resid, na.rm = TRUE)), 
+                color = "blue", linetype = "dashed", size = 1.5) +
+  labs(x = "Residuals", y = "Density")
+```
+
+## Testing the Constant Variance Assumption
+
+You can plot the residuals vs the fitted values (or the predictors themselves) to see if the spread of residuals varies across the fitted values. This can be done in R using the `residualPlots()` function in the `car` package. 
+
+```{r}
+# fitted = T requests the residual vs. smoker plot
+# tests = F and quadratic = F suppresses hypothesis tests
+residualPlots(fit1,
+              pch=20, col="gray", type = "rstandard", 
+              fitted = F, tests = F, quadratic = F)
+```
+
+# Outliers
+
+An outlier in simple linear regression is an observation with a very large residual. This can be evaluated by looking at the studentized residuals vs the fitted values. In R, this can be also be done using the `residualPlots()` function and changing the residual type.
+
+```{r}
+residualPlots(fit1,
+              pch=20, col="gray", type = "rstudent",
+              fitted = F, tests = F, quadratic = F)
+```
+
+You can also use an statistical test for outliers using the `outlierTest()` function, which flags observations with unusually large studentized residuals.  
+
+```{r}
+outlierTest(fit1, n.max = Inf)
+```
+
+# Influential Observations 
+
+Influential observations are ones that alter the regression coefficients by a significant amount when they are included in the model. To test the influence of a point, you can compare the regression coefficient estimates including the point to the ones without including the point in the sample. 
+
+Cook's distance (`cooks.distance()`) is a measure that takes into account the difference in all coefficient estimates when fitting the model with and without the observation in question. Standardized DFBetas (`dfbetas()`) measure the difference for each coefficient estimate separately. The `influenceIndexPlot()` function in the `car` package can plot the Cook's distance, and the `ols_plot_dfbetas()` function in the `olsrr` package can plot the DFBetas.
+
+```{r}
+influenceIndexPlot(fit1, vars = "Cook")
+
+ols_plot_dfbetas(fit1)
+```
+
+# Continuous Outcome and Two Categorical Predictors 
+
+Here we consider 2-way ANOVA with interaction, as described in the class notes. We will use the same outcome from the NHANES data, and use gender (`RIAGENDR`) and cardiovascular disease (`cvd`) as two binary predictors for a simple example. 
+
+## Viewing the Group Means 
+
+We can look at the group means quantitatively in a table format. 
+
+```{r, message = FALSE}
+nhanesf %>% group_by(RIAGENDR, cvd) %>% 
+  summarise(groupmeans = mean(LBDGLUSI))
+```
+
+
+## Running the Model 
+
+We can again run this model using the `lm()` function, and adding an interaction term. 
+
+```{r}
+fit2 = lm(LBDGLUSI ~ RIAGENDR + cvd + RIAGENDR:cvd, data = nhanesf)
+summary(fit2)
+```
+
+# One Categorical Predictor and One Continuous Predictor 
+
+Here we consider 2-way ANCOVA with interaction, as described in the class notes. We will use the same outcome from the NHANES data, and use gender (`RIAGENDR`) and cardiovascular disease (`BMXWAIST`) as two predictors for a simple example. 
+
+## Visualizing the Relationship
+
+We can create a scatterplot of the outcome vs. the continuous predictor and color by the two diffferent genders. Then we can append best fitting lines to both groups. 
+ 
+```{r, message = FALSE}
+ggplot(data = nhanesf, aes(BMXWAIST, LBDGLUSI, color= RIAGENDR)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", se= FALSE)
+```
+
+
+## Running the Model 
+
+We can again run this model using the `lm()` function, and adding an interaction term. We can see that the interaction term is statistically significant based on its Wald-type t-test in the summary output. 
+
+```{r}
+fit3 = lm(LBDGLUSI ~ RIAGENDR + BMXWAIST + RIAGENDR:BMXWAIST, data = nhanesf)
+summary(fit3)
+```
+
+## Partial F-Test 
+
+We can also test for the significance of the interaction term using a partial F-test comparing the full model to the model without the interaction term. You can do this using the `anova()` function and putting both models (full and reduced) in as arguments. You can see the p-value is the same as for the t-test above. 
+
+```{r}
+anova(fit3, 
+      lm(LBDGLUSI ~ RIAGENDR + BMXWAIST, data = nhanesf))
+```
+
+
+
+# Session information
+
+```{r echo = FALSE, results = 'markup'}
+sessionInfo()
+```
+
