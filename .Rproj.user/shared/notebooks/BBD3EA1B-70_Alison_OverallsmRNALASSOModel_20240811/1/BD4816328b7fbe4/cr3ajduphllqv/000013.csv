@@ -1,0 +1,5 @@
+"0","### Need the outcome ERD data and the covariates smRNA data"
+"0","smRNA_dat = read_excel(""Y:/IRBstudies/Pro00103483_PRIME KNEE/data/Original/Biomarkers/PRIME_smRNA_RawCounts_3-7-2024.xlsx"")"
+"0",""
+"0","ERD_dat = readRDS(""Y:/IRBstudies/Pro00103483_PRIME KNEE/data/Derived/30_ERDPredictionModels_20240710.RDS"")"
+"0",""

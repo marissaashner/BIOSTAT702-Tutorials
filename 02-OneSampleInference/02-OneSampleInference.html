@@ -1499,7 +1499,7 @@ border-radius: 0px;
 <h1 class="title toc-ignore">BIOSTAT702 R Tutorial 2:</h1>
 <h3 class="subtitle">One Sample Inference</h3>
 <h4 class="author">Marissa Ashner, PhD</h4>
-<h4 class="date">Last Updated: 2024-07-23</h4>
+<h4 class="date">Last Updated: 2024-08-14</h4>
 
 </div>
 
@@ -1599,8 +1599,26 @@ prop.table(table(nhanes.binary$ALQ151))</code></pre>
 ##       Yes        No 
 ## 0.1177708 0.8822292</code></pre>
 </div>
-<div id="two-sided-proportion-test" class="section level2">
-<h2>Two Sided Proportion Test</h2>
+<div id="prop.test-vs.-binom.test" class="section level2">
+<h2>prop.test() vs. binom.test()</h2>
+<ul>
+<li>There are two functions in R that can be used for inference
+involving proportions.</li>
+<li><code>prop.test()</code> uses a normal approximation to the binomial
+distribution and is generally used for larger sample sizes for that
+reason.
+<ul>
+<li>This function has the option to apply a continuity correction or
+not</li>
+</ul></li>
+<li><code>binom.test()</code> uses the exact binomial test and therefore
+outputs an exact p-value as well</li>
+</ul>
+</div>
+<div id="using-prop.test" class="section level2">
+<h2>Using prop.test()</h2>
+<div id="two-sided-proportion-test" class="section level3">
+<h3>Two Sided Proportion Test</h3>
 <ul>
 <li>Now, we can use the <code>prop.test()</code> function in R to test
 whether this proportion is different than 10%.</li>
@@ -1616,7 +1634,7 @@ prop.test.twosided = prop.test(x = sum(nhanes.binary$ALQ151 == &quot;Yes&quot;),
           n = nrow(nhanes.binary), 
           p = 0.1, 
           alternative = &quot;two.sided&quot;, 
-          correct = FALSE) # the correct arugment applies a continuity correction by default, we are setting it equal to FALSE here
+          correct = FALSE) # the &#39;correct&#39; arugment applies a continuity correction by default, we are setting it equal to FALSE here
 
 # print all the output
 prop.test.twosided </code></pre>
@@ -1655,8 +1673,8 @@ BinomCI(x = sum(nhanes.binary$ALQ151 == &quot;Yes&quot;),
 <pre><code>##            est     lwr.ci    upr.ci
 ## [1,] 0.1177708 0.09728429 0.1382572</code></pre>
 </div>
-<div id="one-sided-proportion-test" class="section level2">
-<h2>One Sided Proportion Test</h2>
+<div id="one-sided-proportion-test" class="section level3">
+<h3>One Sided Proportion Test</h3>
 <ul>
 <li>We instead want to test whether this proportion is <em>greater
 than</em> 10%. We can alter our code using the <code>alternative</code>
@@ -1679,6 +1697,71 @@ prop.test(x = sum(nhanes.binary$ALQ151 == &quot;Yes&quot;),
 ## sample estimates:
 ##         p 
 ## 0.1177708</code></pre>
+</div>
+</div>
+<div id="using-binom.test" class="section level2">
+<h2>Using binom.test()</h2>
+<p>To show how to use this function, let’s assume we have a sample
+proportion of 6/25, and we want to test if this is different than (or
+greater than for one-sided test) 4/25.</p>
+<div id="one-sided-proportion-test-1" class="section level3">
+<h3>One Sided Proportion Test</h3>
+<p>For the one-sided test, you can see that the p-value is equivalent to
+calculating the percentage of successes greater than or equal to 6,
+under the null.</p>
+<pre class="r"><code># run the binomial exact test
+binom.test(6, 25, 4/25, alternative = &quot;greater&quot;)</code></pre>
+<pre><code>## 
+##  Exact binomial test
+## 
+## data:  6 and 25
+## number of successes = 6, number of trials = 25, p-value = 0.2002
+## alternative hypothesis: true probability of success is greater than 0.16
+## 95 percent confidence interval:
+##  0.1100562 1.0000000
+## sample estimates:
+## probability of success 
+##                   0.24</code></pre>
+<pre class="r"><code># check p-value 
+# probability of getting 6 or more successes = 1-probability of 5 or less
+1-pbinom(5, 25, 4/25)</code></pre>
+<pre><code>## [1] 0.200246</code></pre>
+</div>
+<div id="two-sided-proportion-test-1" class="section level3">
+<h3>Two Sided Proportion Test</h3>
+<p>For the two-sided test, the p-value in R is implemented by taking the
+upper tail p-value (what we calculated above) and adding to that the sum
+of lower-tail probabilities that are less than the probability of
+getting exactly 6 observed successes. See below for example.</p>
+<p>Note that different software calculate this two-sided p-value
+differently.</p>
+<pre class="r"><code># run binomial test
+binom.test(6, 25, 4/25, alternative = &quot;two.sided&quot;)</code></pre>
+<pre><code>## 
+##  Exact binomial test
+## 
+## data:  6 and 25
+## number of successes = 6, number of trials = 25, p-value = 0.274
+## alternative hypothesis: true probability of success is not equal to 0.16
+## 95 percent confidence interval:
+##  0.09356444 0.45128802
+## sample estimates:
+## probability of success 
+##                   0.24</code></pre>
+<pre class="r"><code># check p-value 
+## calculate probability of exactly 6 observed under null 
+d = dbinom(6, 25, 4/25)
+d</code></pre>
+<pre><code>## [1] 0.1082044</code></pre>
+<pre class="r"><code>## calculate floor of expected value under null (4 in our case) 
+## calculate probability of 0, 1, 2, 3, 4 under null 
+dbinom(c(0, 1, 2, 3, 4), 25, 4/25)</code></pre>
+<pre><code>## [1] 0.01279329 0.06092042 0.13924666 0.20334433 0.21302740</code></pre>
+<pre class="r"><code>## since 0, 1 &lt; d, include those in the p-value 
+1-pbinom(5, 25, 4/25) + 
+  pbinom(1, 25, 4/25)</code></pre>
+<pre><code>## [1] 0.2739597</code></pre>
+</div>
 </div>
 <div id="power-calculation" class="section level2">
 <h2>Power Calculation</h2>

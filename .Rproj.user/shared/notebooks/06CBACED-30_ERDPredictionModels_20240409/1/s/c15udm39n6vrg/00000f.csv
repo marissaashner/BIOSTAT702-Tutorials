@@ -1,0 +1,1 @@
+"0","final_variables = left_join(erd_covariate_data, erd_outcome_data_wide, by = ""subject_id"")"

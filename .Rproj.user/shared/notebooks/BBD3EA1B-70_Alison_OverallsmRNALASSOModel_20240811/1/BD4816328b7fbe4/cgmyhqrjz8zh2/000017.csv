@@ -1,0 +1,11 @@
+"0","smRNA_scaled[,(3:ncol(smRNA_scaled))] = apply(smRNA_scaled[, 3:ncol(smRNA_baseline_transformed)], 2, function(x) {
+  if (all(x == 0)) {
+    return(x)  # Return the column unchanged if all values are zero
+  } else {
+    return(scale(x))  # Otherwise, scale the column
+  }
+})
+"
+"2","Error in `[.data.frame`(smRNA_scaled, , 3:ncol(smRNA_baseline_transformed)) : 
+  undefined columns selected
+"

@@ -1,0 +1,35 @@
+"0","gridsearch <- expand.grid(
+  alpha = seq(0, 1, 0.1), 
+  lambda = c(2^(-15:15), 3^(-15:15))  # Vary lambda values
+)
+
+### regression formula 
+regressionformula <- as.formula(""response_stepcounts ~ ."")
+
+### set up CV
+train_control <- trainControl(
+  method = ""cv"",  # Cross-validation method (e.g., k-fold)
+  number = nrow(final_variables_stepcounts),    # Number of folds
+  savePredictions = TRUE,
+  allowParallel = FALSE
+)
+
+### set seed 
+set.seed(20484928)
+
+### train model 
+model <- train(
+  regressionformula,
+  data = final_variables_stepcounts,
+  trControl = train_control,
+  method = ""glmnet"",     # Specify the regularization method
+  family = ""gaussian"",
+  tuneGrid = gridsearch,
+  preProcess = NULL      # No preprocessing
+)
+"
+"2","Warning in nominalTrainWorkflow(x = x, y = y, wts = weights, info = trainInfo,  :"
+"2","
+ "
+"2"," There were missing values in resampled performance measures.
+"

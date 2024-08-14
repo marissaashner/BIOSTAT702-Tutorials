@@ -1,0 +1,256 @@
+
+# # CRP 245 Testing Linearity Part 2
+# Sample R Code for Testing Linearity between       
+# a Continuous Response & Continuous Predictor      
+# Using Restricted Cubic Splines and a Lack-of-Fit Test 
+# 
+# Author -- Megan Neely, PhD
+
+# install.packages("scales")
+# if the library command below doesn't successfully
+# load the scales package you may need to use 
+# the install.packages command above. You should only 
+# need to install a single time.
+library(scales)
+
+# Generate toy data: 
+set.seed(2010)
+x <- c(1:32)                 # Predictor 
+mu <- 10 + 5 * sin( x * pi / 24 )  - 2 * cos( (x-6)*4/24 )
+eee <- rnorm( length(mu) )
+y <- mu + eee                # Response 
+
+myData <- data.frame(y=y,x=x)
+
+linearity <- data.frame(x,y,mu)
+# save(linearity,file="linearity.RData")
+# Plot the data to see the relationship between x and y: 
+# - The dots represent the observed data, which contain noise (i.e. error)
+# - The red line represents the 'TRUE' relationship between x and y that 
+#   we are trying to estimate using the data (i.e. via regression)
+# - Based on the shape of the red line, the relationship between x and y 
+#   is NOT linear 
+
+# - Get linear fit 
+fit.lin <- lm(y ~ x)
+summary(fit.lin)
+
+# - Get quadratic polynomial fit 
+x2 <- x*x
+fit.quad <- lm(y ~ x + x2)
+summary(fit.quad)
+
+# compare the fit between the linear and quadratic model
+anova(fit.lin,fit.quad)
+
+# Plot with linear and quadratic polynomial fits
+y.lin_pred <- predict(fit.lin)
+y.quad_pred <- predict(fit.quad)
+plot( x,y, pch = 21, bg=alpha('black',0.3), cex = 1.5)
+#lines( x, mu, col="red", lwd=2)
+title("Scatter Plot with Linear and Quadratic Polynomial Fit")
+lines(x,y.lin_pred ,col='cyan',lwd=3, lty=2)
+lines(x,y.quad_pred ,col='blue',lwd=3, lty=2)
+legend('bottomleft',
+       legend = c('Linear Fit','Quadratic Fit'),
+       col = c('cyan','blue'),
+       lwd=3,bty='n')
+
+#install.packages('Hmisc')
+library(Hmisc)
+
+# - Create the RCS variables 
+rcs.x <- rcspline.eval(x, nk=3, inclx=TRUE)
+#colnames(rcs.x) <- c('x','x1','x2','x3')
+# - Fit the regression model with RCS terms
+fit.rcs <- lm(y ~ rcs.x)
+summary(fit.rcs)
+
+# - Compare fits to get linearity test p-value 
+anova(fit.lin,fit.rcs)
+
+# plot data with RCS fit
+y.lin_pred <- predict(fit.lin)
+y.rcs_pred <- predict(fit.rcs)
+plot( x,y, pch = 21, bg=alpha('black',0.3), cex = 1.5)
+#lines( x, mu, col="red", lwd=2)
+title("Scatter Plot with Linear and RCS Fit")
+lines(x,y.lin_pred ,col='cyan',lwd=3, lty=2)
+lines(x,y.rcs_pred ,col='purple3',lwd=3, lty=2)
+legend('bottomleft',
+       legend = c('Linear Fit','RCS Fit'),
+       col = c('cyan','purple3'),
+       lwd=3,bty='n')
+
+
+# install package if needed
+# install.packages("lspline")
+# - Load package to obtain linear spline terms
+library(lspline)
+# - Get linear spline fit 
+# - Create the linear spline variables (1 knot @ X = 17)
+ls.x <- lspline(x,knots = 17)
+
+# - Fit the linear spline model
+fit.ls <- lm(y ~ ls.x)
+summary(fit.ls)
+
+# plot linear spline fit and rcs fit
+y.ls_pred <- predict(fit.ls)
+y.rcs_pred <- predict(fit.rcs)
+plot( x,y, pch = 21, bg=alpha('black',0.3), cex = 1.5)
+#lines( x, mu, col="red", lwd=2)
+title("Scatter Plot with Linear Spline and RCS Fit")
+lines(x,y.ls_pred ,col='magenta',lwd=3, lty=2)
+lines(x,y.rcs_pred ,col='purple3',lwd=3, lty=2)
+legend('bottomleft',
+       legend = c('Linear Spline Fit','RCS Fit'),
+       col = c('magenta','purple3'),
+       lwd=3,bty='n')
+
+# plot with only linear spline fit
+y.ls_pred <- predict(fit.ls)
+plot( x,y, pch = 21, bg=alpha('black',0.3), cex = 1.5)
+#lines( x, mu, col="red", lwd=2)
+title("Scatter Plot with Linear Spline and RCS Fit")
+lines(x,y.ls_pred ,col='magenta',lwd=3, lty=2)
+
+# plot with true model, linear spline fit, and RCS fit
+y.ls_pred <- predict(fit.ls)
+y.rcs_pred <- predict(fit.rcs)
+plot( x,y, pch = 21, bg=alpha('black',0.3), cex = 1.5)
+#lines( x, mu, col="red", lwd=2)
+title("Scatter Plot with Linear Spline and RCS Fit and True Relationship")
+lines(x,mu ,col='red',lwd=3, lty=1)
+lines(x,y.ls_pred ,col='magenta',lwd=3, lty=2)
+lines(x,y.rcs_pred ,col='purple3',lwd=3, lty=2)
+legend('bottomleft',
+       legend = c('True Model','Linear Spline Fit','RCS Fit'),
+       col = c('red','magenta','purple3'),
+       lwd=3,bty='n')
+
+# - Get null fit (no X terms)
+fit.null <- lm(y ~ 1)
+
+# - Compare fits to get linearity test p-value 
+anova(fit.null,fit.ls)
+
+# - Create the linear spline variables (2 knot @ X = 13 and 18)
+ls2.x <- lspline(x,knots = c(13,18))
+# - Fit the linear spline model
+fit.ls2 <- lm(y ~ ls2.x)
+summary(fit.ls2)
+# plot of true model, 1-knot linear spline, 2-know linear spline,
+# and RCS fit
+y.ls_pred <- predict(fit.ls)
+y.ls2_pred <- predict(fit.ls2)
+y.rcs_pred <- predict(fit.rcs)
+plot( x,y, pch = 21, bg=alpha('black',0.3), cex = 1.5)
+#lines( x, mu, col="red", lwd=2)
+title("Scatter Plot with Linear Spline and RCS Fit and True Relationship")
+lines(x,mu ,col='red',lwd=3, lty=1)
+lines(x,y.ls_pred ,col='magenta',lwd=3, lty=2)
+lines(x,y.ls2_pred ,col='green3',lwd=3, lty=2)
+lines(x,y.rcs_pred ,col='purple3',lwd=3, lty=2)
+legend('bottomleft',
+       legend = c('True Model','1-knot Linear Spline Fit','2-knot Linear Spline Fit','RCS Fit'),
+       col = c('red','magenta','green3','purple3'),
+       lwd=3,bty='n')
+
+
+# --------------------------------------
+# load needed packages
+library(scales)
+library(Hmisc)
+library(lmtest)
+library(lspline)
+# install.packages("rms")
+# you may need to install the rms package first
+library(rms)
+
+# Framingham Data
+# Dataset: framBMI
+
+# The Framingham Study is a longitudinal investigation of 
+# constitutional and environmental factors influencing the 
+# development of CVD in men and women. Examination of participants 
+# has taken place every two years and the cohort has been followed 
+# for morbidity and mortality over that time period.
+
+# Data Dictionary: 
+# SYSBP        systolic blood pressure (mean of last 
+#              two of three measurements)(mmHg)
+# BMI          Body Mass Index
+# AGE          Age at exam in years
+# SEX;         Sex at Birth; 1 = Male; 2 = Female
+# BPMEDS       Antihypertensive medication use at exam
+#              (0=not currently using; 1=current use)
+# DIABP        diastolic blood pressure (mean of last 
+#              two of three measurements)(mmHg)
+# DIABETES     
+# CURSMOKE     Current cigarette smoking at exam 
+#              (0=not current smoker; 1=current smoker)
+# CIGPDAY      0=not current smoker; 1-99 cig per day
+# TOTCHOL      Serum Total Cholesterol (mg/dL)
+
+
+
+
+# Download and load the FramBMI dataset: 
+load(url("http://www.duke.edu/~sgrambow/crp241data/FramBMI.RData"))
+
+# examine data structure
+str(FramBMI)
+# summary statistics
+summary(FramBMI)
+
+plot(FramBMI$BMI,FramBMI$CURSMOKE,
+     pch = 21, bg=alpha('black',0.3), cex = 1.5,
+     main = 'Relationship Current Smoking Status and BMI')
+
+plot(FramBMI$AGE,FramBMI$CURSMOKE,
+     pch = 21, bg=alpha('black',0.3), cex = 1.5,
+     main = 'Relationship Current Smoking Status and Age (years)')
+
+# - Get linear fit 
+fit.bmi.lin <- glm(CURSMOKE ~ BMI, data=FramBMI, family='binomial')
+
+# - Get 5-knot RCS fit 
+fit.bmi.rcs <- glm(CURSMOKE ~ rcspline.eval(BMI,nk=5,inclx=TRUE), data=FramBMI, family='binomial')
+
+# - Compare fits to get linearity test p-value 
+lrtest(fit.bmi.lin,fit.bmi.rcs)
+
+# BMI Spline Plot with estimated spline transformation
+rcspline.plot(FramBMI$BMI,FramBMI$CURSMOKE,
+              model = 'logistic', nk=5,statloc = 'none')
+# - Get linear fit 
+fit.age.lin <- glm(CURSMOKE ~ AGE, data=FramBMI, family='binomial')
+
+# - Get 5-knot RCS fit 
+fit.age.rcs <- glm(CURSMOKE ~ rcspline.eval(AGE,nk=5,inclx=TRUE), data=FramBMI, family='binomial')
+
+# - Compare fits to get linearity test p-value 
+lrtest(fit.age.lin,fit.age.rcs)
+
+# AGE Spline Plot with estimated spline transformation
+rcspline.plot(FramBMI$AGE,FramBMI$CURSMOKE,
+              model = 'logistic', nk=5,statloc = 'none')
+
+summary(fit.bmi.lin)
+exp(5*fit.bmi.lin$coef)
+exp(5*confint(fit.bmi.lin))
+
+# fit null model
+fit.null <- glm(CURSMOKE ~ 1, data=FramBMI, family='binomial')
+
+# compare null model to rcs model for age
+lrtest(fit.null,fit.age.rcs)
+
+# linear spline model fit for age
+fit.age.ls <- glm(CURSMOKE ~ lspline(AGE,knots = 45), data=FramBMI, family='binomial')
+exp(5*fit.age.ls$coefficients)
+exp(5*confint(fit.age.ls))
+# --------------------------------------
+# END OF PROGRAM
+

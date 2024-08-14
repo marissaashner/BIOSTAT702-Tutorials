@@ -1,0 +1,2 @@
+"0","# setting global options for code chunks"
+"0","knitr::opts_chunk$set(echo = TRUE)"

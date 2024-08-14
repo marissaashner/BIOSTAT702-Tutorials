@@ -1,0 +1,4 @@
+"0","### Need the outcome ERD data and the covariates smRNA data"
+"0","smRNA_dat = read_excel(""V:/IRBstudies/Pro00103483_PRIME KNEE/data/Original/Biomarkers/PRIME_smRNA_RawCounts_3-7-2024.xlsx"")"
+"2","Error: `path` does not exist: ‘V:/IRBstudies/Pro00103483_PRIME KNEE/data/Original/Biomarkers/PRIME_smRNA_RawCounts_3-7-2024.xlsx’
+"

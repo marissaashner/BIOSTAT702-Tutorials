@@ -1,0 +1,49 @@
+"0","## Modeling
+### Create a hyperparameter grid 
+gridsearch <- expand.grid(
+  alpha = 1, # using LASSO
+  # NOTE: Use different lambda values
+  lambda = seq(0, 1, length.out = 100)  # Vary lambda values
+)
+
+
+### regression formula 
+regressionformula <- as.formula(""scaled_stepcounts ~ ."")
+
+
+### set up CV
+train_control <- trainControl(
+  method = ""cv"",  # Cross-validation method (e.g., k-fold)
+  number = 10, #nrow(final_lepadl_smRNA),    # Number of folds
+  savePredictions = TRUE,
+  allowParallel = FALSE
+)
+
+# train_control <- trainControl(
+#   method = ""cv"",  # Cross-validation method (e.g., k-fold)
+#   number = 10,    # Number of folds
+#   savePredictions = TRUE,
+#   allowParallel = FALSE
+# )
+
+
+
+
+### set seed 
+set.seed(1395571)
+
+### train model 
+model <- train(
+  regressionformula,
+  data = final_sc_smRNA,
+  trControl = train_control,
+  method = ""glmnet"",     # Specify the regularization method
+  tuneGrid = gridsearch,
+  preProcess = NULL      # No preprocessing
+)
+"
+"2","Warning in nominalTrainWorkflow(x = x, y = y, wts = weights, info = trainInfo,  :"
+"2","
+ "
+"2"," There were missing values in resampled performance measures.
+"

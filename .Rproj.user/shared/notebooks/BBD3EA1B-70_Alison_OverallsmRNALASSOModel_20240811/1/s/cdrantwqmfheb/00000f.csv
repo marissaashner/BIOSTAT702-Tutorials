@@ -1,0 +1,60 @@
+"0","##### Packages Needed ##### "
+"0","library(dplyr)"
+"0","library(caret)"
+"2","Loading required package: lattice
+"
+"2","
+Attaching package: ‘caret’
+
+"
+"2","The following object is masked from ‘package:purrr’:
+
+    lift
+
+"
+"0","library(glmnet)"
+"2","Loading required package: Matrix
+"
+"2","
+Attaching package: ‘Matrix’
+
+"
+"2","The following objects are masked from ‘package:tidyr’:
+
+    expand, pack, unpack
+
+"
+"2","Loaded glmnet 4.1-8
+"
+"0","library(tidyr)"
+"0","library(mpath)"
+"2","Loading required package: pamr
+"
+"2","Loading required package: cluster
+"
+"2","Loading required package: survival
+"
+"2","
+Attaching package: ‘survival’
+
+"
+"2","The following object is masked from ‘package:caret’:
+
+    cluster
+
+"
+"0","library(readxl)"
+"0",""
+"0","##### clear existing data and graphics #####  "
+"0","rm(list=ls())"
+"0","graphics.off()"
+"0",""
+"0",""
+"0","##### working directory ##### "
+"0",""
+"0","### working directory is project folder Stats/programs/"
+"0","setwd(""//duhsnas-pri/dusom_cfa/Private/Statistics/Studies/Pro00103483_PRIME KNEE/programs/"")"
+"0",""
+"0",""
+"0","# To render this document: "
+"0","# rmarkdown::render(input = ""70_Alison_OverallsmRNALASSOModel_20240811.Rmd"", output_dir = ""../output/"", output_file = ""70_Alison_OverallsmRNALASSOModel_20240811.html"", clean = FALSE)"

@@ -1,0 +1,207 @@
+---
+title: 'BIOSTAT 713: Module 16'
+subtitle: 'Parametric Survival Models -- Theory and Intuition'
+author: 'Dr. Marissa Ashner'
+institute: 'Department of Biostatistics and Bioinformatics'
+date: 'Fall 2024'
+output: 
+  beamer_presentation: 
+    latex_engine: xelatex
+    keep_tex: true
+header-includes: 
+  - \titlegraphic{\includegraphics[width=0.3\paperwidth]{../latex_dependencies/duke_som_pic.png}}
+  - "\\usepackage{fontspec}"
+  - "\\usepackage{booktabs}"
+  - "\\definecolor{dukeblue}{HTML}{003087}"
+  - "\\setsansfont{Times New Roman}"
+  - "\\setbeamercolor{structure}{fg=dukeblue}"
+  - "\\setbeamercolor{title}{fg=dukeblue}"
+  - "\\setbeamertemplate{navigation symbols}{}"
+  - "\\setbeamertemplate{footline}[frame number]"
+---
+
+
+```{r setup, echo=FALSE, include=FALSE, warning=FALSE}
+knitr::opts_chunk$set(warning=FALSE, fig.width=5, fig.height=3.5)
+
+
+##########################################################################
+##                                                                        ##
+##  Author: Marissa Ashner, marissa.ashner@duke.edu                     
+##
+##  Program: BIOSTAT713_Module16.rmd                            ##
+##  Purpose: This program performs analyses to support class notes
+##    
+##                                                                        ##
+##  Input files:  XXX                                       
+##
+##                                                                        ##
+##  Output files: BIOSTAT713_Module16.pdf                      ##
+##                                                                        ##
+##  Change Log:                                                           ##
+##  08/12/2024 File started                                               ##
+##                                                                        ##
+########################################################################## 
+
+# setwd()
+library(tidyverse)
+library(ggplot2)
+library(cowplot)
+library(lubridate)
+library(knitr)
+library(survival)
+library(survminer)
+
+options(knitr.kable.NA="")
+options(max.print = .Machine$integer.max)  # don't limit console printing
+
+rm(list=ls())
+```
+
+
+# Module Goals
+
+-   Understand the pros and cons of using parametric survival models 
+-   Understand the intuition behind parametric proportional hazards and accelerated failure time models 
+
+# Resources for this Module 
+
+### From Canvas 
+
+-   Applied Survival Analysis Using R: Chapter 10
+-   Article: "Parametric survival model to identify the predictors of breast cancer mortality: An accelerated failure time approach" 
+    -   **This was required pre-reading for this module**
+    
+### Websites 
+
+-   [\textcolor{blue}{\underline{Parametric Survival Princeton Notes}}](https://grodri.github.io/survival/ParametricSurvival.pdf)
+-   [\textcolor{blue}{\underline{Data Analysis in Medicine and Health using R: Chapter 12}}](https://bookdown.org/drki_musa/dataanalysis/parametric-survival-analysis.html)
+
+# Pre-Reading Quiz 
+
+-   Why did the authors use a parametric survival model? 
+-   How many different parametric models did they run? 
+-   Which one did they say had the best fit on the data? 
+-   What is the secret word? 
+
+# What is a parametric survival model? 
+
+-   The distribution of the survival time is *completely* specified by some parametric distribution
+-   This is different from KM curves, where the survival distribution was estimated completely empirically
+-   This is different from Cox models, where the survival distribution is estimated in part by a set of regression parameters and in part by an unspecified baseline hazard 
+
+# Why use a parametric survival model? 
+
+-   *Efficiency*: If the parametric model is specified correctly, then estimates will be more precise than for semi-/non-parametric models 
+-   *Estimation*: You can estimate quantities beyond the last observed data point (this should be done with caution regardless, as it is extrapolation) 
+-   *Hazard/Survival Functions:* You can more precisely describe the shape of the hazard, survival, or other related functions
+-   *PH Assumption:* There are some parametric models that do not require the proportional hazards assumption 
+
+# Types of Parametric Survival Models
+
+-   Parametric Proportional Hazards (PH) Model 
+-   Accelerated Failure Time Model (AFT) 
+-   Proportional Odds Model (not covered here)
+-   Simply Using Parametric Families (not covered here) 
+
+# Common Parametric Distributions for Survival Data
+
+-   Parametric PH Models: 
+    -   Weibull 
+    -   Exponential
+    -   Gompertz 
+-   AFT Models: 
+    -   Weibull
+    -   Exponential
+    -   Log-normal 
+    -   Log-logistic
+-   You will see why these make sense in the following slides
+
+# Parametric Proportional Hazards Model 
+
+-   **Remember:** When we previously learned about proportional hazards model, we defined them as $h(t|\mathbf{Z}) = h_0(t) \times g(\mathbf{Z})$
+-   **Remember:** In a *Cox* proportional hazards model, the baseline hazard, $h_0(t)$, is left unspecified and $g(\mathbf{Z}) = \exp(\beta^T\mathbf{Z})$
+-   In a *parametric* proportional hazards model, we would specify the baseline hazard by giving it some sort of parametric distribution 
+
+# Parametric Proportional Hazards Model 
+
+-   For example, let's assume the baseline hazard comes from a Exponential distribution with parameter $\lambda$
+    -   Then $h(t) = \lambda t \exp(\beta^T\mathbf{Z})$
+    -   $h(t)$ also has an Exponential-shaped hazard with parameter $\lambda \exp(\beta^T\mathbf{Z})$
+        -   We want this property where $h(t)$ is of the same family of distributions as $h_0(t)$
+-   **Note:** The proportional hazards assumption still needs to hold, as $h(t)/h_0(t)$ is still assumed to be independent of $t$
+-   Interpretation of $\beta$ (the regression coefficients): Same as in a Cox model, they represent log-hazard ratios 
+
+# Accelerated Failure Time Model (AFT) 
+
+-   The Accelerated Failure Time Model (AFT) directly models the survival function instead of the hazard function
+-   $S(t) = S_0(t/\phi)$ for some constant acceleration factor $1/\phi$
+    -   Similar to the PH model, we want to specify $S_0(t)$ such that $S(t)$ is also of the same family of distributions 
+    -   For example, assuming an exponential distribution for the baseline survival with parameter $\lambda$, $S_0(t) = \exp(-\lambda t)$
+        -   This implies $S(t) = \exp(-\lambda t/\phi)$ which is also exponential with parameter $\lambda/\phi$
+        
+# Log-linear Representation of the AFT 
+
+-   The AFT model is commonly represented by using a linear model for the variable $\log(T)$ 
+
+$$\log T = \mu + \alpha^T\mathbf{Z} + \sigma\epsilon = \alpha^T\mathbf{Z} + W$$
+where $\mu$ is an intercept term and $\sigma$ is the scale, and $W = \mu+\sigma\epsilon$
+
+-   As in linear regression, $\epsilon$ is an error term assumed to follow a particular distribution 
+
+# Comparing the forms of the AFT 
+
+\begin{align*}
+S(t) &= P(T\geq t) = P(\log(T) \geq log(t)) \\
+&= P(\mu + \alpha^T\mathbf{Z} + \sigma\epsilon \geq log(t)) \\
+&= P(\exp(\mu + \sigma\epsilon)\exp(\alpha^T\mathbf{Z})\geq t)\\
+&= P(\exp(\mu + \sigma\epsilon) \geq t/\exp(\alpha^T\mathbf{Z}))\\
+&= P(\exp(W) \geq t/\exp(\alpha\mathbf{Z})) = S_0(t/\exp(\alpha^T\mathbf{Z}))
+\end{align*}
+where $\exp(W)$ is a random variable whose parametric survival function we use as the baseline. Then $\phi = \exp(\alpha^T\mathbf{Z})$
+
+By picking a distribution for $T$, we are picking a distribution for $\epsilon$ 
+
+# Common Distributions for $\epsilon$ and $T$
+
+-   One of the most common distributions for $\epsilon$ is a normal distribution, as done in a typical linear regression 
+    -   This means that the distribution of $T$ would be log-normal 
+-   Another distribution for $\epsilon$ would be an extreme value distribution 
+    -   This implies $T$ would be Weibull (or exponential)
+-   $\epsilon$ could also be distributed as a logistic distribution 
+    -   This implies $T$ would be Log-logistic 
+    
+# Interpretation of AFT Regression Coefficients
+
+-   For an AFT model, we have $T = e^We^{\eta} = T_0e^{\eta}$ where $\eta = \alpha^T\mathbf{Z}$
+-   **Remember:** In a PH model, we have $h(t) = h_0(t)e^{\eta}$
+-   So, where in a PH model, the covariates act multiplicatively on the hazard, in an AFT model, they act multiplicatively on time directly 
+-   This means, for a one unit increase in $Z_j$, holding the rest of the covariates constant, the survival time is multiplied by $e^{\beta_j}$.
+-   $\beta_j$ itself represents the change in the log of survival time for a one-unit increase in $Z_j$
+
+# Fitting the Parametric Survival Models 
+
+-   Maximum Likelihood! 
+-   **Remember:** Our observed data is $U$ and $\Delta$, and our parameters can be summed up as $\theta$ and will consist of the regression parameters and any parameters from the distributions we are specifying (e.g., for a log-normal AFT, $\theta = (\alpha, \mu, \sigma)$)
+-   For the AFT, we directly specified $S(.)$, and $h(.)$ can be derived
+-   For the PH, we directly specify $h(.)$, and $S(.)$ can be derived
+$$L(\theta|U, \Delta) = \prod_{i=1}^n f(U_i; \theta)^{\Delta_i} S(U_i;\theta)^{1-\Delta_i} = \prod_{i=1}^n h(U_i; \theta)^{\Delta_i} S(U_i;\theta)$$
+-   This likelihood can be maximized numerically via Newton-Raphson or similar
+-   **Note:** We do *not* need to use a partial likelihood as we do for the Cox proportional hazard model. Why is this? 
+
+# Q \& A 
+
+## Use the Q \& A feature on Slido to ask questions or upvote your classmates' questions! 
+
+
+# Module Exercises 
+
+\begin{enumerate}
+\small
+\item Consider an Accelerated Failure Time Model where the baseline survival is assumed to follow a Weibull distribution with shape a and scale b. Show that the survival distribution of $T$ (i.e., $S(t)$) also follows a Weibull distribution. State the parameters and hazard function for that distribution. (Use a process similar to slide 10; use $S_0(t) = e^{-(t/b)^a}$). 
+\item Now consider a Parametric PH Model where the baseline hazard is assumed to follow a Weibull distribution with shape a and scale b. Show that the hazard of $T$ also follows a Weibull distribution. State the parameters for that distribution. (use $h_0(t) = (a/b)(t/b)^{a-1}$)
+\item Equate the two hazard functions from 1 and 2, and express the hazard ratio from the PH model in terms of the acceleration factor from the AFT model.
+\item Let $\phi = e^{\beta Z}$ and let $g(Z) = e^{\alpha Z}$. Based on your answer from 3, express the regression coefficient from the PH model in terms of the regression coefficient from the AFT model.  
+\end{enumerate}
+
+

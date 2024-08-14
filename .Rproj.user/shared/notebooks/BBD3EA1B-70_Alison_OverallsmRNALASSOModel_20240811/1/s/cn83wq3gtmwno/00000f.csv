@@ -1,0 +1,14 @@
+"0","### 
+best_lambda = model$bestTune$lambda
+##### best_lambda is 14348907 using 10-fold cv
+best_lambda
+"
+"1","[1]"
+"1"," 14348907"
+"1","
+"
+"0","best_lambda"
+"1","[1]"
+"1"," 14348907"
+"1","
+"

@@ -1,0 +1,661 @@
+---
+title: "ERD Prediction Models"
+author: "Marissa Ashner"
+date: "2024-04-09"
+output:  
+  html_document:
+    toc: true
+    toc_float:
+        collapsed: true
+        smooth_scroll: true
+---
+
+
+```{r setup, include=FALSE}
+# setting global options for code chunks
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Purpose
+
+This script creates the ERD Prediction models for the following outcomes: 
+
+* PROMIS Pain Intensity at 6 months
+* PROMIS Pain Interference at 6 months 
+* LE PADL at 1 month 
+* Step counts at 4 months
+
+```{r}
+### ************************************************************************** ###
+# Project folders: Stats: '\\duhsnas-pri\dusom_cfa\Private\Statistics\StudiesPro00103483_PRIME KNEE\'
+#                  IRB: ' \\duhsnas-pri\dusom_cfa\Private\IRBStudies\StudiesPro00103483_PRIME KNEE\'
+# Author: Marissa Ashner
+# Created date: April 9, 2024
+#
+# Modified dates:  
+#     - April 15, 2024: put all ERDs together, run Kendall's correlation coefficient, output variable importance, save ERD dataset (wrote over the 04/09 output...)
+#     - May 29, 2024: re-run with removing 0 variance predictors for LE PADL instead of sum to 0 or 1
+#     - June 11, 2024: Use Covariate Prep data from program 30_0; add set.seed before the training of all models (actually this won't matter with LOO CV but leaving it in)
+#     - July 2, 2024: Add Step Counts, remove correlations between ERDs from knitted file for now (did not add step counts yet)
+#     - July 10, 2024: Use new dataset that changes step count inclusion criteria to day 107 instead of day 114
+#                 
+# Input:  project folder IRB - data/*
+#         
+#         
+# Output: project folder Stats - output/*
+#         project folder IRB - data/Derived/*
+# 
+### ************************************************************************** ###
+```
+
+
+# Libraries and other setup
+
+```{r echo = FALSE}
+##### Packages Needed ##### 
+library(dplyr)
+library(caret)
+library(glmnet)
+library(tidyr)
+library(mpath)
+
+
+##### clear existing data and graphics #####  
+rm(list=ls())
+graphics.off()
+
+
+##### working directory ##### 
+
+### working directory is project folder Stats/programs/
+setwd("//duhsnas-pri/dusom_cfa/Private/Statistics/Studies/Pro00103483_PRIME KNEE/programs/")
+
+
+# To render this document: 
+# rmarkdown::render(input = "30_ERDPredictionModels_20240409.Rmd", output_dir = "../output/", output_file = "30_ERDPredictionModels_20240710.html", clean = FALSE)
+```
+
+# Read in Data 
+
+```{r}
+### Need the outcome data and the covariate data
+erd_outcome_data = readRDS("../../../../IRBstudies/Pro00103483_PRIME KNEE/data/Derived/2_ERDOutcomesAll_20240111.RDS")
+
+erd_covariate_data = readRDS("../../../../IRBstudies/Pro00103483_PRIME KNEE/data/Derived/30_0_ERDPredictionCovariatePrep_20240611.RDS")
+
+### Step count outcome and baseline data 
+stepct_outcome_dat = readRDS("../../../../IRBstudies/Pro00103483_PRIME KNEE/data/Derived/50_Alison_StepCountsObservedOutcome_20240710.RDS")
+
+stepct_baseline_dat = readRDS("../../../../IRBstudies/Pro00103483_PRIME KNEE/data/Derived/4_2_StepCountsBaseline_20240605.RDS")
+```
+
+# Select Needed Outcome Variables 
+
+```{r}
+# From outcomes, need LE PADL 1 month, PROMIS 6 months
+### also need baseline 
+erd_outcome_data = erd_outcome_data %>% select(subject_id,
+                                       pain_intensity_tscore,
+                                       pain_interference_tscore,
+                                       adl_score_new,
+                                       redcap_event_name)
+
+# make wide dataset
+erd_outcome_data_wide = erd_outcome_data %>%
+  pivot_wider(names_from = redcap_event_name, values_from = c(pain_intensity_tscore, pain_interference_tscore, adl_score_new),
+              id_cols = "subject_id") %>% 
+  select(subject_id, `pain_intensity_tscore_Baseline`,
+         `pain_intensity_tscore_6 Month`, pain_interference_tscore_Baseline,
+         `pain_interference_tscore_6 Month`, adl_score_new_Baseline,
+         `adl_score_new_1 Month`)
+
+### Add Step Counts
+
+# Filter to people with >= 3 days in first month and >= three days after day 107
+stepct_outcome_filtered = stepct_outcome_dat %>% 
+  filter(first_month_daycounts >= 3 & prior_week_daycounts >= 3)
+
+# Add to rest of outcome data 
+erd_outcome_data_wide = erd_outcome_data_wide %>% 
+  full_join(stepct_baseline_dat, by = "subject_id") %>% 
+  full_join(stepct_outcome_filtered %>% select(subject_id, predicted_4month), 
+            by = "subject_id")
+```
+
+# Missing Indicators & Scaling for Baseline Outcomes 
+
+```{r}
+## Baseline Pain Intensity
+
+# Center / Scale
+erd_outcome_data_wide$pain_intensity_tscore_Baseline = scale(erd_outcome_data_wide$pain_intensity_tscore_Baseline)[,1]
+
+# Create missing indicator 
+erd_outcome_data_wide$pain_intensity_tscore_Baseline_missing <- ifelse(erd_outcome_data_wide$pain_intensity_tscore_Baseline %>% is.na(), 1, 0)
+erd_outcome_data_wide$pain_intensity_tscore_Baseline[erd_outcome_data_wide$pain_intensity_tscore_Baseline %>% is.na()] <- 0
+
+## Baseline ADL 
+
+# Center / Scale 
+erd_outcome_data_wide$adl_score_new_Baseline = scale(erd_outcome_data_wide$adl_score_new_Baseline)[,1]
+
+# Create Missing Indicator 
+erd_outcome_data_wide$adl_score_new_Baseline_missing <- ifelse(erd_outcome_data_wide$adl_score_new_Baseline %>% is.na(), 1, 0)
+erd_outcome_data_wide$adl_score_new_Baseline[erd_outcome_data_wide$adl_score_new_Baseline %>% is.na()] <- 0
+
+## Baseline Pain Interference 
+
+# Center / Scale 
+erd_outcome_data_wide$pain_interference_tscore_Baseline = scale(erd_outcome_data_wide$pain_interference_tscore_Baseline)[,1]
+
+# Create Missing Indicator 
+erd_outcome_data_wide$pain_interference_tscore_Baseline_missing <- ifelse(erd_outcome_data_wide$pain_interference_tscore_Baseline %>% is.na(), 1, 0)
+erd_outcome_data_wide$pain_interference_tscore_Baseline[erd_outcome_data_wide$pain_interference_tscore_Baseline %>% is.na()] <- 0
+
+## Baseline Step Counts
+
+# Center / Scale 
+erd_outcome_data_wide$baseline_stepcount = scale(erd_outcome_data_wide$baseline_stepcount)[,1]
+
+# Create Missing Indicator 
+erd_outcome_data_wide$baseline_stepcount_missing <- ifelse(erd_outcome_data_wide$baseline_stepcount %>% is.na(), 1, 0)
+erd_outcome_data_wide$baseline_stepcount[erd_outcome_data_wide$baseline_stepcount %>% is.na()] <- 0
+```
+
+# Final Regression Data Frame
+
+```{r}
+final_variables = left_join(erd_covariate_data, erd_outcome_data_wide, by = "subject_id")
+```
+
+# Run Regressions
+
+## PROMIS Pain Intensity 
+
+```{r}
+# remove anyone with missing outcome
+final_variables_pain_intensity = final_variables %>% filter(!(is.na(`pain_intensity_tscore_6 Month`)))
+
+# save subject ids 
+subjects_painintensity = final_variables_pain_intensity %>% 
+  select(subject_id, `pain_intensity_tscore_6 Month`)
+
+# define response variable and covariates
+response_pain_intensity = final_variables_pain_intensity$`pain_intensity_tscore_6 Month`
+
+covariates_pain_intensity = final_variables_pain_intensity %>%
+  select(-subject_id, 
+         -ends_with("Month"),
+         -starts_with("adl_score_new_Baseline"),
+         -starts_with("pain_interference_tscore_Baseline"), 
+         -starts_with("baseline_stepcount"), 
+         -predicted_4month)
+
+final_variables_pain_intensity = 
+  cbind(covariates_pain_intensity, response_pain_intensity) %>% 
+  select_if(~ var(.) > 0)
+```
+
+##### Modeling
+
+```{r}
+### Create a hyperparameter grid 
+gridsearch <- expand.grid(
+  alpha = seq(0, 1, 0.1), 
+  lambda = c(2^(-15:15), 3^(-15:15))  # Vary lambda values
+)
+
+### regression formula 
+regressionformula <- as.formula("response_pain_intensity ~ .")
+
+### set up CV
+train_control <- trainControl(
+  method = "cv",  # Cross-validation method (e.g., k-fold)
+  number = nrow(final_variables_pain_intensity),    # Number of folds
+  savePredictions = TRUE,
+  allowParallel = FALSE
+)
+
+### set seed 
+set.seed(1395571)
+
+### train model 
+model <- train(
+  regressionformula,
+  data = final_variables_pain_intensity,
+  trControl = train_control,
+  method = "glmnet",     # Specify the regularization method
+  tuneGrid = gridsearch,
+  preProcess = NULL      # No preprocessing
+)
+
+### 
+best_alpha = model$bestTune$alpha 
+best_lambda = model$bestTune$lambda
+best_alpha
+best_lambda
+
+### final model 
+final_model = glmnet(covariates_pain_intensity %>% as.matrix(), 
+                     response_pain_intensity,
+                     alpha = best_alpha, lambda = best_lambda)
+
+### predictions
+y_predicted <- predict(final_model,
+                       s = best_lambda,
+                       newx = covariates_pain_intensity %>% as.matrix())
+
+#find SST and SSE
+sst <- sum((response_pain_intensity - mean(response_pain_intensity))^2)
+sse <- sum((y_predicted - response_pain_intensity)^2)
+
+#find R-Squared
+rsq <- 1 - sse/sst
+rsq
+
+### plot 
+plot(response_pain_intensity, y_predicted)
+
+## ERD plot
+erd_pain_intensity = response_pain_intensity- y_predicted
+hist(response_pain_intensity- y_predicted, breaks = 30)
+
+### VIP 
+# Extract coefficients
+coefs <- coef(final_model)
+
+# Create a data frame of variable names and corresponding coefficients
+var_importance <- data.frame(
+  Variable = rownames(coefs),
+  Importance = abs(coefs[,1])
+)
+
+var_importance %>% arrange(-Importance) %>% select(Importance)
+```
+
+## PROMIS Pain Interference 
+
+```{r}
+# remove anyone with missing outcome
+final_variables_pain_interference = final_variables %>% filter(!(is.na(`pain_interference_tscore_6 Month`)))
+
+# save subject ids 
+subjects_paininterference = final_variables_pain_interference %>% 
+  select(subject_id, `pain_interference_tscore_6 Month`)
+
+# define response variable and covariates
+response_pain_interference = final_variables_pain_interference$`pain_interference_tscore_6 Month`
+
+covariates_pain_interference = final_variables_pain_interference %>%
+  select(-subject_id,
+         -ends_with("Month"),
+         -starts_with("adl_score_new_Baseline"),
+         -starts_with("pain_intensity_tscore_Baseline"), 
+         -starts_with("baseline_stepcount"), 
+         -predicted_4month)
+
+final_variables_pain_interference = cbind(covariates_pain_interference,
+                                          response_pain_interference) %>% 
+  select_if(~ var(.) > 0)
+```
+
+##### Modeling
+
+```{r}
+### Create a hyperparameter grid 
+gridsearch <- expand.grid(
+  alpha = seq(0, 1, 0.1), 
+  lambda = c(2^(-15:15), 3^(-15:15))  # Vary lambda values
+)
+
+### regression formula 
+regressionformula <- as.formula("response_pain_interference ~ .")
+
+### set up CV
+train_control <- trainControl(
+  method = "cv",  # Cross-validation method (e.g., k-fold)
+  number = nrow(final_variables_pain_interference),    # Number of folds
+  savePredictions = TRUE,
+  allowParallel = FALSE
+)
+
+### set seed 
+set.seed(1283470)
+
+### train model 
+model <- train(
+  regressionformula,
+  data = final_variables_pain_interference,
+  trControl = train_control,
+  method = "glmnet",     # Specify the regularization method
+  tuneGrid = gridsearch,
+  preProcess = NULL      # No preprocessing
+)
+
+### 
+best_alpha = model$bestTune$alpha 
+best_lambda = model$bestTune$lambda
+best_alpha
+best_lambda
+
+### final model 
+final_model = glmnet(covariates_pain_interference %>% as.matrix(), 
+                     response_pain_interference,
+                     alpha = best_alpha, lambda = best_lambda)
+
+### predictions
+y_predicted <- predict(final_model,
+                       s = best_lambda,
+                       newx = covariates_pain_interference %>% as.matrix())
+
+#find SST and SSE
+sst <- sum((response_pain_interference - mean(response_pain_interference))^2)
+sse <- sum((y_predicted - response_pain_interference)^2)
+
+#find R-Squared
+rsq <- 1 - sse/sst
+rsq
+
+
+### plot 
+plot(response_pain_interference, y_predicted)
+
+## ERD plot
+erd_pain_interference = response_pain_interference - y_predicted
+hist(response_pain_interference - y_predicted, breaks = 30)
+
+### VIP 
+# Extract coefficients
+coefs <- coef(final_model)
+
+# Create a data frame of variable names and corresponding coefficients
+var_importance <- data.frame(
+  Variable = rownames(coefs),
+  Importance = abs(coefs[,1])
+)
+
+var_importance %>% arrange(-Importance) %>% select(Importance)
+```
+
+
+## LE PADL
+
+```{r}
+# remove those with missing outcome, and variable(s) with no variation in this sample
+final_variables_adl = final_variables %>% filter(!(is.na(`adl_score_new_1 Month`))) 
+
+# save subject ids 
+subjects_adl = final_variables_adl %>% 
+  select(subject_id, `adl_score_new_1 Month`)
+
+# select needed columns 
+response_adl = final_variables_adl$`adl_score_new_1 Month`
+
+covariates_adl = final_variables_adl %>%
+  select(-subject_id, 
+         -starts_with("pain"),
+         -`adl_score_new_1 Month`, 
+         -starts_with("baseline_stepcount"), 
+         -predicted_4month)
+
+final_variables_adl = cbind(covariates_adl,
+                            response_adl) %>% 
+  select_if(~ var(.) > 0)
+```
+
+
+##### Modeling
+
+```{r}
+### Create a hyperparameter grid 
+gridsearch <- expand.grid(
+  alpha = seq(0, 1, 0.1), 
+  lambda = c(2^(-15:15), 3^(-15:15))  # Vary lambda values
+)
+
+### regression formula 
+regressionformula <- as.formula("response_adl ~ .")
+
+### set up CV
+train_control <- trainControl(
+  method = "cv",  # Cross-validation method (e.g., k-fold)
+  number = nrow(final_variables_adl),    # Number of folds
+  savePredictions = TRUE,
+  allowParallel = FALSE
+)
+
+### set seed 
+set.seed(20484928)
+
+### train model 
+model <- train(
+  regressionformula,
+  data = final_variables_adl,
+  trControl = train_control,
+  method = "glmnet",     # Specify the regularization method
+  family = "poisson",
+  tuneGrid = gridsearch,
+  preProcess = NULL      # No preprocessing
+)
+
+### 
+best_alpha = model$bestTune$alpha 
+best_lambda = model$bestTune$lambda
+best_alpha 
+best_lambda
+
+### final model 
+final_model = glmnet(covariates_adl %>% as.matrix(), 
+                     response_adl,
+                     alpha = best_alpha, lambda = best_lambda)
+
+### predictions
+y_predicted <- predict(final_model,
+                       s = best_lambda,
+                       newx = covariates_adl %>% as.matrix())
+
+#find SST and SSE
+sst <- sum((response_adl - mean(response_adl))^2)
+sse <- sum((y_predicted - response_adl)^2)
+
+#find R-Squared
+rsq <- 1 - sse/sst
+rsq
+
+### plot 
+plot(response_adl, y_predicted)
+
+## ERD plot
+erd_adl = response_adl - y_predicted
+hist(response_adl - y_predicted, breaks = 30)
+
+### VIP 
+# Extract coefficients
+coefs <- coef(final_model)
+
+# Create a data frame of variable names and corresponding coefficients
+var_importance <- data.frame(
+  Variable = rownames(coefs),
+  Importance = abs(coefs[,1])
+)
+
+var_importance %>% arrange(-Importance) %>% select(Importance)
+```
+
+
+## Step Counts
+
+```{r}
+# remove those with missing outcome, and variable(s) with no variation in this sample
+final_variables_stepcounts = final_variables %>% filter(!(is.na(`predicted_4month`))) 
+
+# save subject ids 
+subjects_stepcounts = final_variables_stepcounts %>% 
+  select(subject_id, `predicted_4month`)
+
+# select needed columns 
+response_stepcounts = final_variables_stepcounts$`predicted_4month`
+
+covariates_stepcounts = final_variables_stepcounts %>%
+  select(-subject_id, 
+         -starts_with("pain"),
+         -starts_with("adl"),
+         -predicted_4month)
+
+final_variables_stepcounts = cbind(covariates_stepcounts,
+                            response_stepcounts) %>% 
+  select_if(~ var(.) > 0)
+```
+
+
+##### Modeling
+
+```{r}
+### Create a hyperparameter grid 
+gridsearch <- expand.grid(
+  alpha = seq(0, 1, 0.1), 
+  lambda = c(2^(-15:15), 3^(-15:15))  # Vary lambda values
+)
+
+### regression formula 
+regressionformula <- as.formula("response_stepcounts ~ .")
+
+### set up CV
+train_control <- trainControl(
+  method = "cv",  # Cross-validation method (e.g., k-fold)
+  number = nrow(final_variables_stepcounts),    # Number of folds
+  savePredictions = TRUE,
+  allowParallel = FALSE
+)
+
+### set seed 
+set.seed(20484928)
+
+### train model 
+model <- train(
+  regressionformula,
+  data = final_variables_stepcounts,
+  trControl = train_control,
+  method = "glmnet",     # Specify the regularization method
+  family = "gaussian",
+  tuneGrid = gridsearch,
+  preProcess = NULL      # No preprocessing
+)
+
+### 
+best_alpha = model$bestTune$alpha 
+best_lambda = model$bestTune$lambda
+best_alpha 
+best_lambda
+
+### final model 
+final_model = glmnet(covariates_stepcounts %>% as.matrix(), 
+                     response_stepcounts,
+                     alpha = best_alpha, lambda = best_lambda)
+
+### predictions
+y_predicted <- predict(final_model,
+                       s = best_lambda,
+                       newx = covariates_stepcounts %>% as.matrix())
+
+#find SST and SSE
+sst <- sum((response_stepcounts - mean(response_stepcounts))^2)
+sse <- sum((y_predicted - response_stepcounts)^2)
+
+#find R-Squared
+rsq <- 1 - sse/sst
+rsq
+
+### plot 
+plot(response_stepcounts, y_predicted)
+
+## ERD plot
+erd_stepcounts = response_stepcounts - y_predicted
+hist(response_stepcounts - y_predicted, breaks = 30)
+
+### VIP 
+# Extract coefficients
+coefs <- coef(final_model)
+
+# Create a data frame of variable names and corresponding coefficients
+var_importance <- data.frame(
+  Variable = rownames(coefs),
+  Importance = abs(coefs[,1])
+)
+
+var_importance %>% arrange(-Importance) %>% select(Importance)
+```
+
+
+# Combining all ERDs
+
+```{r}
+erd_pain_intensity = cbind(subjects_painintensity, erd_pain_intensity)
+colnames(erd_pain_intensity)[3] = "ERD_painintensity"
+erd_pain_interference = cbind(subjects_paininterference, erd_pain_interference)
+colnames(erd_pain_interference)[3] = "ERD_paininterference"
+erd_adl = cbind(subjects_adl, erd_adl)
+colnames(erd_adl)[3] = "ERD_lepadl"
+erd_stepcounts = cbind(subjects_stepcounts, erd_stepcounts)
+colnames(erd_stepcounts)[3] = "ERD_stepcounts"
+
+ERD_all = full_join(erd_adl %>% select(subject_id, ERD_lepadl), 
+                    erd_pain_intensity %>% select(subject_id, 
+                                                 ERD_painintensity), 
+                    by = "subject_id") %>% 
+  full_join(erd_pain_interference %>% select(subject_id, 
+                                            ERD_paininterference), 
+            by = "subject_id") %>% 
+  full_join(erd_stepcounts %>% select(subject_id, 
+                                            ERD_stepcounts), 
+            by = "subject_id") %>% 
+  mutate(scaled_lepadl = scale(ERD_lepadl) %>% as.numeric(),
+         scaled_painintensity = scale(ERD_painintensity) %>% 
+           as.numeric(),
+         scaled_paininterference = scale(ERD_paininterference) %>% as.numeric(),
+         scaled_stepcounts = scale(ERD_stepcounts) %>% as.numeric())
+
+```
+
+```{r, include = FALSE}
+cor_painintensity_paininterf = cor.test(ERD_all$scaled_painintensity, 
+                                   ERD_all$scaled_paininterference, 
+                                   method = "kendall", 
+                                   use = "pairwise.complete.obs")
+
+cor_painintensity_lepadl = cor.test(ERD_all$scaled_painintensity, 
+                                   ERD_all$scaled_lepadl, 
+                                   method = "kendall", 
+                                   use = "pairwise.complete.obs")
+
+cor_lepadl_paininterf = cor.test(ERD_all$scaled_lepadl, 
+                                   ERD_all$scaled_paininterference, 
+                                   method = "kendall", 
+                                   use = "pairwise.complete.obs")
+
+cor_painintensity_paininterf
+
+ggplot(data = ERD_all) + geom_point(aes(scaled_painintensity, scaled_paininterference))
+
+cor_painintensity_lepadl
+
+ggplot(data = ERD_all) + geom_point(aes(scaled_painintensity, scaled_lepadl))
+
+cor_lepadl_paininterf
+
+ggplot(data = ERD_all) + geom_point(aes(scaled_lepadl, scaled_paininterference))
+
+```
+
+# Output Final ERDs
+
+```{r}
+saveRDS(ERD_all, "//duhsnas-pri/dusom_cfa/Private/IRBstudies/Pro00103483_PRIME KNEE/data/Derived/30_ERDPredictionModels_20240710.RDS")
+```
+
+# Session information
+
+```{r echo = FALSE, results = 'markup'}
+sessionInfo()
+```
