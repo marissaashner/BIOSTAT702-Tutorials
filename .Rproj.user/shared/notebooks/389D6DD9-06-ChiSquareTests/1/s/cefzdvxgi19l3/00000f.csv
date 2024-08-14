@@ -1,0 +1,22 @@
+"0","BreslowDayTest(table(nhanesf_complete$RIAGENDR, 
+      nhanesf_complete$ALQ151, 
+      nhanesf_complete$smoker))
+"
+"1","
+"
+"1","	Breslow-Day test on Homogeneity of Odds Ratios"
+"1","
+"
+"1","
+"
+"1","data:  "
+"1",""
+"1","table(nhanesf_complete$RIAGENDR, nhanesf_complete$ALQ151, nhanesf_complete$smoker)"
+"1",""
+"1","
+"
+"1","X-squared = 2.0617, df = 2, p-value = 0.3567"
+"1","
+"
+"1","
+"

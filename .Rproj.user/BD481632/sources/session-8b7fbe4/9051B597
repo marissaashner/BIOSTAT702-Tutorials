@@ -1,9 +1,9 @@
 {
     "id": "9051B597",
-    "path": "U:/GitHub/BIOSTAT702-Tutorials/04-SLRCategoricalPredictor/04-SLRCategoricalPredictor.Rmd",
-    "project_path": "04-SLRCategoricalPredictor/04-SLRCategoricalPredictor.Rmd",
+    "path": "U:/GitHub/BIOSTAT702-Tutorials/06-ChiSquareTests/06-ChiSquareTests.Rmd",
+    "project_path": "06-ChiSquareTests/06-ChiSquareTests.Rmd",
     "type": "r_markdown",
-    "hash": "2889128420",
+    "hash": "1632133775",
     "contents": "",
     "dirty": false,
     "created": 1721063075444.0,
@@ -12,16 +12,16 @@
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "363,22",
-        "scrollLine": "354",
+        "cursorPosition": "77,3",
+        "scrollLine": "77",
         "last_setup_crc32": "8b7fbe483610ddb"
     },
     "folds": "",
-    "lastKnownWriteTime": 1723480560,
+    "lastKnownWriteTime": 1723663376,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1723480560511,
+    "last_content_update": 1723663379171,
     "read_only": false,
     "read_only_alternatives": []
 }
