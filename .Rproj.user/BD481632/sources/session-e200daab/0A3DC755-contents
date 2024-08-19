@@ -1,0 +1,359 @@
+---
+title: "BIOSTAT 702: Exercise 5"
+subtitle: "Simple Linear Regression: Calculations"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: 
+  pdf_document:
+    number_sections: false
+    toc: true
+    toc_depth: 3
+    extra_dependencies: ["color"]
+urlcolor: blue
+header-includes: 
+   - \usepackage{tabularx}
+   - \usepackage{booktabs}
+   - \usepackage{float}
+   - \newcommand{\benum}{\begin{enumerate}}
+   - \newcommand{\eenum}{\end{enumerate}}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = T)
+options(tinytex.verbose = TRUE)
+
+library(dplyr)
+```
+
+# Learning Objectives
+\benum
+  \item To practice some of the details around the various SLM calculations, including the derivation of the predictions and the ANOVA table.  Our premise is that by programming these yourself, one step at a time, you'll attain a deeper understanding of the content.
+  \item To practice two types of R programming: (1) use of standard R functions to perform statistical analysis; and (2) use of matrices to perform calculations and create/extend statistical procedures.
+  
+\eenum
+
+# How to Do This Exercise
+
+We recommend that you read this entire document prior to answering any of the questions. If anything is unclear please ask for help from the instructors or TAs before getting started. You are also allowed to ask for help from the instructors or TAs while you are working on the assignment. You may collaborate with your classmates on this assignment—in fact, we encourage this--and use any technology resources available to you, including Internet searches, generative AI tools, etc. However, if you collaborate with others on this assignment please be aware that \textit{you must submit answers to the questions written in your own words. This means that you should not quote phrases from other sources, including AI tools, even with proper attribution.} Although quoting with proper attribution is good scholarly practice, it will be considered failure to follow the instructions for this assignment and you will be asked to revise and resubmit your answer. In this eventuality, points may be deducted in accordance with the grading rubric for this assignment as described below. Finally, you do not need to cite sources that you used to answer the questions for this assignment.
+
+
+# Grading Rubric
+
+The assignment is worth 20 points (4 points per question). The points for each question are awarded as follows: 3 points for answering all parts of the question and following directions, and 1 point for a correct answer. Partial credit may be awarded at the instructor's discretion.
+
+# Preparation
+
+We will use this toy dataset: 
+
+\begin{center}
+\begin{tabular}{|c| c|}
+    \hline
+    X & Y \\
+    \hline
+    1 & 0 \\
+        \hline
+    2 & 4 \\
+        \hline
+    3 & 5 \\
+        \hline
+\end{tabular}
+\end{center}
+
+$X$ and $Y$ are observed. We typically add a column of 1's, and thus subdivide $X$ into $X_0$ and $X_1$: 
+
+\begin{center}
+\begin{tabular}{|c|c| c|}
+    \hline
+    $X_0$ & $X_1$ & Y \\
+    \hline
+    1 & 1 & 0 \\
+        \hline
+    1 & 2 & 4 \\
+        \hline
+    1 & 3 & 5 \\
+        \hline
+\end{tabular}
+\end{center}
+
+# Question 1
+
+First, we will apply the matrix version of the SLR model. 
+
+\benum
+\item Use the \texttt{matrix()} function in R to enter the elements of the toy dataset. For example, the R code for creating the toy dataset is \texttt{toy <- matrix(c(1, 1, 1, 1, 2, 3, 0, 4, 5), nrow = 3, ncol = 3)}. Print the results to verify.
+
+```{r}
+toy <- matrix(c(1, 1, 1, 1, 2, 3, 0, 4, 5), nrow = 3, ncol = 3)
+toy
+```
+
+\item Use the \texttt{colnames()} function to add column names of $X_0$, $X_1$, and $Y$. Print the results to verify. 
+
+```{r}
+colnames(toy) <- c("X0", "X1", "Y")
+toy
+```
+
+\item Apply the transpose operator to create $X'$ (You might have to call it $X_t$). Print the results to verify.
+
+```{r}
+Xt = t(toy[,1:2])
+Xt
+```
+
+\item Use the matrix multiplication operator \texttt{\%*\%} to create $X'X$. Print the results to verify. Compare this with a hand calculation. For example, the top-left element of the matrix should be $1*1+1*1+1*1 = 3$. 
+
+```{r}
+# matrix multiplication
+XtX = Xt %*% toy[,1:2]
+XtX
+
+# by hand
+
+## top left
+1*1 + 1*1 + 1*1 
+
+## top right 
+1*1 + 1*2 + 1*3 
+
+## bottom left
+1*1 + 1*2 + 1*3
+
+## bottom right
+1*1 + 2*2 + 3*3
+```
+
+\item Use the \texttt{solve()} function to create $(X'X)^{-1}$ -- that is, the inverse of $X'X$. Verify that this inverse works as desired by multiplying it by $X'X$. What should the result be? 
+
+\textcolor{red}{The result should be the identity matrix.}
+
+```{r}
+# find inverse
+XtXinv = solve(XtX)
+XtXinv
+
+# multiply inverse by XtX
+XtX %*% XtXinv
+```
+
+
+\item Similarly, create $X'Y$. Print the results.
+
+```{r}
+XtY = Xt %*% toy[,"Y"]
+XtY
+```
+
+
+\item Multiply $(X'X)^{-1}$ by $X'Y$. Name the resulting matrix Beta. Print Beta, which contains the parameter estimates from the SLR model. What are they?
+
+\textcolor{red}{The parameter estimates are $\hat{\beta}_0 = -2$ and $\hat{\beta}_1 = 2.5$.}
+
+```{r}
+Beta = XtXinv %*% XtY 
+Beta
+```
+
+\eenum
+
+# Question 2
+
+\benum
+\item Although it isn't absolutely necessary to do so, use the \texttt{data.frame()} function to create a data frame containing $X_1$ and $Y$. Name it XY.
+
+```{r}
+XY = toy[,2:3] %>% as.data.frame()
+XY
+```
+
+\item Run a SLR on $XY$. First run the \texttt{lm()} function (taking care to appropriately name the variables) to create an output object named lm\_obj. Then run the \texttt{summary()} function on lm\_obj. Among others, a table of parameter estimates is printed. Do these parameter estimates match what you obtained using matrix operations? 
+
+\textcolor{red}{The parameter estimates do match what I obtained using the matrix operations, i.e., $-2, 2.5$.}
+
+```{r}
+lm_obj = lm(Y ~ X1, data = XY)
+summary(lm_obj)
+```
+
+\item Although we will go into the composition of lm\_obj in more detail elsewhere, run the \texttt{names()} function to find the names of its components. How many components do you see? 
+
+\textcolor{red}{I see 12 components.}
+
+```{r}
+names(lm_obj)
+```
+\item Print \texttt{lm\_obj\$coefficients}. What are the coefficients? 
+
+\textcolor{red}{The coefficients are the parameter esitmates for the intercept and for $X_1$.}
+
+```{r}
+lm_obj$coefficients
+```
+
+\item In R code, how would you refer to the element of \texttt{lm\_obj\$coefficients} that contains $\beta_1$?
+
+```{r}
+lm_obj$coefficients["X1"]
+```
+
+\item Using the information from \texttt{names()}, assign the fitted values to a new object named Fitted and print the results. 
+
+```{r}
+Fitted = lm_obj$fitted.values
+Fitted
+```
+
+\item Verify that the components of Fitted are identical to the result of applying the \texttt{predict()} function to lm\_obj. 
+
+\textcolor{red}{They are the same.}
+
+```{r}
+predict(lm_obj)
+```
+
+\item Check the calculation of the last fitted value -- it should be $-2.0 + (2.5*3)$. Is it? 
+
+\textcolor{red}{Yes, these match.}
+
+```{r}
+-2 + 2.5*3
+```
+
+
+\eenum
+
+# Question 3 
+
+Now we will generate the inputs to the ANOVA table. 
+
+\benum
+\item The first task is to collect $Y, Y_m,$ and $Y_p$, all as 3 x 1 vectors. You already have $Y$ and $Y_p$. Calculate the mean of $Y$ and copy the results into a 3 x 1 vector using the \texttt{rep()} function. 
+
+```{r}
+Y = XY$Y
+Yp = Fitted
+Ym = mean(Y) %>% rep(3)
+mean(Y)
+```
+
+\item Create a vector that (1) calculates $Y-Y_m$; and then (2) squares the results. Sum the elements of this vector, and name the result SST. Check the calculation by hand. 
+
+```{r}
+# calculate SST
+SST = sum((Y-Ym)^2)
+SST
+
+# check by hand 
+(Y[1]-mean(Y))^2 + (Y[2]-mean(Y))^2 + (Y[3]-mean(Y))^2
+```
+
+\item Create a vector that (1) calculates $Y-Y_p$; and then (2) squares the results. Sum the elements of this vector, and name the result SSE. Check the calculation by hand. 
+
+```{r}
+# calculate SST
+SSE = sum((Y-Yp)^2)
+SSE
+
+# check by hand 
+(Y[1]-Fitted[1])^2 + (Y[2]-Fitted[2])^2 + (Y[3]-Fitted[3])^2
+```
+
+\item Create a vector that (1) calculates $Y_p-Y_m$; and then (2) squares the results. Sum the elements of this vector, and name the result SSM. Check the calculation by hand.
+
+```{r}
+# calculate SST
+SSM = sum((Yp-Ym)^2)
+SSM
+
+# check by hand 
+(Fitted[1]-mean(Y))^2 + (Fitted[2]-mean(Y))^2 + (Fitted[3]-mean(Y))^2
+```
+
+\item You have now calculated the 3 sums of squares in the ANOVA table. What are their values? 
+
+\textcolor{red}{SST is 14, SSE is 1.5 and SSM is 12.5.}
+
+\item Generate an ANOVA table directly from lm\_obj by applying the \texttt{anova()} function. Do you obtain the same sums of squares? As a default, R doesn't print SST. From a statistical perspective, why not? 
+
+\textcolor{red}{Yes, I obtain the sum squares of squares. SST is not necessary because it can be obtained by adding the other two sums of squares.}
+
+```{r}
+anova_obj = anova(lm_obj)
+anova_obj
+```
+
+\item How could you use the output object from the \texttt{anova()} function to calculate SST? Verify that your code works. 
+
+```{r}
+anova_obj$`Sum Sq`[1] + anova_obj$`Sum Sq`[2]
+```
+
+\eenum
+
+# Question 4 
+
+You have already demonstrated that the results of applying the \texttt{lm() \texttt{function are identical to making the matrix calculations directly.  As a last set of tasks, check that these also match the algebraic version of the calculations.  Since we know that they do, you only need to check this for $\beta_1$.
+
+$$\beta_1 = \frac{\sum_{i=1}^n (X_i-X_m)(Y_i-Y_m)}{\sum_{i=1}^n(X_i-X_m)^2}$$
+Hack away at this problem one step at a time. For example, you have already created 3 copies of $Y_m$. Do the same for $X_m$, apply the \texttt{*} operator to perform the multiplications, and sum the results. Is $\beta_1$ as expected?
+
+\textcolor{red}{Yes, $\hat{\beta_1} = 2.5$ as we saw previously.}
+
+```{r}
+# create mean of X
+Xm = mean(XY$X1) %>% rep(3)
+
+# calculate beta1
+beta1 = sum((XY$X1 - Xm)*(Y-Ym))/sum((XY$X1-Xm)^2)
+beta1
+```
+
+
+# Question 5
+
+This [site](https://zief0002.github.io/matrix-algebra/standard-errors-and-variance-estimates.html) walks you through using matrix algebra to create the variance-covariance matrix, the standard error of the regression coefficients, etc. You won't be asked to do all of this here.
+
+This variance-covariance matrix contains the variance of $\beta_0$, the variance of $\beta_1$, and the covariance between $\beta_0$ and $\beta_1$.  We'll focus on the variance of $\beta_1$.  
+
+\benum
+\item The \texttt{vcov()} function calculates the variance-covariance matrix directly.  Apply this function to lm\_obj.  What is the value of the variance of $\beta_1$?  Take the square root of the variance of $\beta_1$.  Does it equal the standard error of the slope coefficient from summary(lm\_obj)?
+
+\textcolor{red}{The value of the variance of $\beta_1$ is 0.75. The square root (0.866) is equal to the standard error of the slope coefficient from the regression model.}
+
+```{r}
+# vcov 
+vcov(lm_obj)
+
+# sqrt var of beta1
+sqrt(vcov(lm_obj)[2,2])
+
+# standard error of slope coefficient 
+summary(lm_obj)$coef
+```
+
+\item Now consider the algebraic formula for $se(\beta_1): \sqrt{\{\sum_i(Y_i-Y_p)^2 / (n-2) \} / \sum_i(X_i-X_m)^2}$.  The standard error is the square root of this.  You have already created most of the elements of this formula.  Verify that this formula yields an identical estimate of se($\beta_1$).
+
+```{r}
+# define sample size
+n = nrow(XY)
+
+# calculate standard error of beta1 
+seBeta1 = sqrt(sum((Y-Yp)^2)/(n-2)/sum((XY$X1-Xm)^2))
+seBeta1
+```
+
+\item The formula contains 3 terms.  Here, $(n-2)$, the degrees of freedom associated with $\beta_1$, serves the purpose of appropriately accounting for the sample size. Considering $\sum_i(Y_i-Y_p)^2$, under what circumstances will this be small?  In particular, when the model fits well will this term be large or small?
+
+\textcolor{red}{This sum will be small when the values of $Y$ are close to their predicted (or fitted) values. This means, when the model fits well, this term will be small.}
+
+\item Considering $\sum_i(X_i-X_m)^2$, under what circumstances will this be large?  When you are designing an experiment, and thus have the ability to assign the values of X, should they have a little variation or a lot of variation?  Remember: se($\beta_1$) will be small when the numerator is small and the denominator is large.  
+
+\textcolor{red}{This sum will be large when values of $X$ are not necessarily close to their mean. This means that ideally your values of $X$ should have a lot of variation.} 
+
+\eenum
+
+**Note:** BIOS701 will cover maximum likelihood estimation later in the semester.  For now, here is a brief summary.  Because the error terms are normally distributed so are the observations and so is $\beta_1$.  The likelihood function -- or, more simply, the log of the likelihood function -- quantifies the relative probability that the data will be observed, given a specific value of $\beta_1$.  The most likely value of $\beta_1$ is the maximum likelihood estimate (MLE).  At the MLE, the slope (i.e., first derivative) of the likelihood function will be 0.  If the likelihood function near the MLE is relatively flat, then a variety of values of $\beta_1$ are plausible, but if the likelihood function near the MLE is steep, then we can be confident that the observed MLE is close to the true value.  The steeper the slope, the more "information" is present, the smaller is se($\beta_1$), and the tighter will be the confidence interval for $\beta_1$.  The amount of information is influenced by the distribution of $X$, but is most strongly derived from how well the model fits -- in other words, how close $Y$ and $Y_p$ are.
+
+
+
+
+

@@ -1,0 +1,440 @@
+---
+title: "BIOSTAT 702: Exercise 3"
+subtitle: "One Sample Inference for a Binary Outcome"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: 
+  pdf_document:
+    number_sections: false
+    toc: true
+    toc_depth: 3
+    extra_dependencies: ["listings", "color"]
+urlcolor: blue
+header-includes: 
+   - \usepackage{tabularx}
+   - \usepackage{booktabs}
+   - \usepackage{makecell}
+   - \usepackage{float}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(tinytex.verbose = TRUE)
+```
+
+# Learning Objectives
+\begin{enumerate}
+  \item Understand when 1-sided and 2-sided statistical tests are appropriate
+  \item Know how to conduct and interpret a hypothesis test for a binary outcome
+  \item Understand common biases that arise from the use of 1-sample tests
+  \item Describe when and why a control group is needed in clinical research studies
+\end{enumerate}
+
+# How to Do This Exercise
+
+We recommend that you read this entire document prior to answering any of the questions. If anything is unclear please ask for help from the instructors or TAs before getting started. You are also allowed to ask for help from the instructors or TAs while you are working on the assignment. You may collaborate with your classmates on this assignment—in fact, we encourage this--and use any technology resources available to you, including Internet searches, generative AI tools, etc. However, if you collaborate with others on this assignment please be aware that \textit{you must submit answers to the questions written in your own words. This means that you should not quote phrases from other sources, including AI tools, even with proper attribution.} Although quoting with proper attribution is good scholarly practice, it will be considered failure to follow the instructions for this assignment and you will be asked to revise and resubmit your answer. In this eventuality, points may be deducted in accordance with the grading rubric for this assignment as described below. Finally, you do not need to cite sources that you used to answer the questions for this assignment.
+
+
+# Grading Rubric
+
+The assignment is worth 36 points (4 points per question). The points for each question are awarded as follows: 3 points for answering all parts of the question and following directions, and 1 point for a correct answer. Partial credit may be awarded at the instructor's discretion.
+
+# Preparation
+
+Do the following before answering the questions for his exercise.
+
+\begin{enumerate}
+  \item Read the article by Desjardens titled \textit{Recurrent Glioblastoma Treated with Recombinant Poliovirus}. (NEJM. 2018;379(2):150-161). The PDF is available on Canvas and the article can be viewed online \href{https://www.nejm.org/doi/10.1056/NEJMoa1716435}{here}.
+  \item Read the article by Sun on subgroup analyses. The PDF is available on Canvas and the article can be viewed \href{https://jamanetwork.com/journals/jama/fullarticle/1817802}{here}.
+  \item Verify that you can open the dataset Desjardins\_Table1.csv.
+\end{enumerate}
+
+# Question 1
+The article by Desjardins is complicated and might be difficult for you to read if you don't have much experience reading medical journal articles. Answer the following questions about the paper to help make sure you understand the details of the study.
+
+\begin{enumerate}
+  \item Describe the patient population that the study enrolled. Specifically, which disease, how old were they, and where were they recruited from?
+  
+  \textcolor{red}{The study participants were all adults who had experienced a recurrence of World Health Organization grade IV malignagnt glioma, which is a brain cancer for which there is no existing treatment. It is not explicitly stated in the paper but it is presumed that all of the participants came from Duke.}
+  
+  \item Give a brief description of the drug that was tested in the study.
+  
+  \textcolor{red}{The drug, called PVSRIPO, is the same strain of attenuated poliovirus used in the Sabin polio vaccine, although with a slight modification that is intended to attack cancer cells that are infected by the virus.}
+  
+  \item Identify the text in the Introduction that describes how the drug is supposed to work. Quote the text you found here, and then give your own interpretation of what it says. This will be difficult to do. Just do the best you can.
+  
+  \textcolor{red}{"PVSRIPO tropism is determined by CD155, a high-affinity ligand for the T-cell immunoreceptor with immunoglobulin and immunoreceptor tyrosine-based inhibition motif domains. In solid tumors, CD155 is broadly upregulated on malignant cells, and expressed in antigen-presenting cells. PVSRIPO infection of neoplastic cells in vitro results in lethal cytotoxic effects and activates innate antiviral interferon responses. Antigen-presenting cells are natural poliovirus targets after oral infection in vivo. PVSRIPO causes chronic, sublethal infection of
+antigen-presenting cells in vitro, eliciting sustained proinflammatory cytokine responses and activation of the function of antigen-presenting cells, which enables T-cell stimulation in preclinical in vitro assays."
+\\
+\\
+This text seems to suggest that the modified poliovirus, PVSRIPO, is naturally inclined to infect cells that express the CD155 protein. This protein is expressed on the brain tumor cells and also on antigen presenting cells, which are part of the human immune system. When tumor cells are infected by PVSRIPO they die while simultaneously triggering activation of an immune response through something called interferon. PVSRIPO will also infect antigen presenting cells. When antigen presenting cells are infected by PVSRIPO this results in activation of T-cells that presumably will attack things the tumor.}
+  
+  \item The study compares outcomes in patients treated with PVSRIPO to a "historical control". Briefly describe what this means.
+  
+  \textcolor{red}{The historical controls are a cohort of 104 patients with recurrent WHO grade IV malignant glioma who were treated at Duke prior to conducting this study.}
+  
+  \item The study dose escalation started with Dose 1 and proceeded to Dose 5, after which the dose was de-escalated due to toxicity. The dose actually went below Dose 1, to Dose -1 and Dose -2. How many patients received each dose, across both the dose escalation and dose expansion phase of the study? Remember, the total should sum to 61. 
+  
+  \textcolor{red}{From Table 2, there were 9 patients in the dose escalation phase (1 patient on each of Doses 1-3, 2 patients on Dose 4, and 4 patients on Dose 5). From Table 3, there were 54 patients in the dose expansion phase (6 on Dose 2, 31 on Dose -1, and 15 on Dose -2).}
+
+\end{enumerate}
+
+# Question 2
+
+In drug development, a phase 1 study attempts to identify the ideal dose going forward.  For most drugs, efficacy in treating the disease increases with increasing dose, but adverse events do as well.  The goal is to find the maximum tolerated dose (MTD), which is the highest dose with an acceptable adverse event rate. Usually, the dose escalation applies fixed rules.  For example, they might start with a small dose (based on laboratory data), and if 0 or 1 adverse event is observed over 6 patients they would proceed to the next larger dose.  As might be imagined, there is plenty of room for developing rules that are more sophisticated than this, with better statistical properties. In fact, Desjardins used an approach called the Continual Reassessment Method (CRM), which is decribed in detail on page 2 of the protocol included in the supplementary materials on the NEJM website. No need to worry about the details of how CRM works for now. Instead, just be aware there was a method behind how the dose was modified based on how patients reacted.
+
+This study was similar to most dose finding studies. Specifically, the dose was first escalated, then deescalated, and finally a dose was selected for the subsequent part the study called the dose expansion. Now that you've answered Question 1 you should know how many patients participated in the dose escalation and dose expansion phases of the study, and how many patients received each of the doses in the study. 
+
+The survival for all 61 patients was reported, regardless of dose (see Figure 1).  What are the advantages and disadvantages of combining the results across dose?  What biases might result?
+
+\textcolor{red}{There are potentially several concerns here. First, dose itself might be predictive of outcome. For example, lower doses may have less efficacy than higher doses. So, to combine all the doses may give an estimate of survival that isn't generalizable. Second, patients were not randomized to the doses they received. This could be important, for example, if there are differences in the distribution of prognostic factors across the dose groups. Again, this might create an estimate of survival that isn't generalizable. For example, consider if the following had occurred.}
+
+```{r, echo=FALSE, warning=FALSE}
+library(knitr)
+library(kableExtra)
+
+# Create a data frame
+data <- data.frame(
+  `Dose` = c("Dose 1", "Dose 2", "Dose 3"),
+  `Efficacy of the Dose` = c("Poor", "Good", "Excellent"),
+  `Prognosis of Patients Receiving the Dose` = c("Excellent", "Good", "Poor"),
+  `Survival.Outcome` = c("Good", "Good", "Good")
+)
+
+# Apply red color to all text in the table
+data <- data.frame(lapply(data, function(x) {
+  cell_spec(x, color = "red")
+}))
+
+# Define column names with spaces instead of periods
+colnames(data) <- c(
+  cell_spec("Dose", color="red"),
+  cell_spec("Efficacy of the Dose", color = "red"), 
+  cell_spec("Prognosis of Patients Receiving the Dose", color = "red"), 
+  cell_spec("Survival Outcome", color = "red")
+)
+
+# Print the table with kableExtra styling
+kable(data, format = "latex", escape = FALSE, booktabs = TRUE) %>%
+  kable_styling(latex_options = c("striped", "hold_position"))
+```
+
+\textcolor{red}{In this example all of the patients have a Good survival outcome. What if the following had occurred instead?}
+
+```{r, echo=FALSE, warning=FALSE}
+# Create a data frame
+data <- data.frame(
+  `Dose` = c("Dose 1", "Dose 2", "Dose 3"),
+  `Efficacy of the Dose` = c("Poor", "Good", "Excellent"),
+  `Prognosis of Patients Receiving the Dose` = c("Poor", "Poor", "Good"),
+  `Survival.Outcome` = c("Poor", "Poor", "Good")
+)
+
+# Apply red color to all text in the table
+data <- data.frame(lapply(data, function(x) {
+  cell_spec(x, color = "red")
+}))
+
+# Define column names with spaces instead of periods
+colnames(data) <- c(
+  cell_spec("Dose", color="red"),
+  cell_spec("Efficacy of the Dose", color = "red"), 
+  cell_spec("Prognosis of Patients Receiving the Dose", color = "red"), 
+  cell_spec("Survival Outcome", color = "red")
+)
+
+# Print the table with kableExtra styling
+kable(data, format = "latex", escape = FALSE, booktabs = TRUE) %>%
+  kable_styling(latex_options = c("striped", "hold_position"))
+```
+
+\textcolor{red}{In this scenario, the average survival outcome might be described as Poor (the mean of Poor, Poor, and Good).}
+
+\textcolor{red}{Since only the maximum tolerated dose will be used in future studies it would at least make more sense to only study survival in patients receiving that dose. The heterogeneity of prognosis in those patients may still not match what is expected in future studies, though.}
+
+# Question 3
+
+The study includes 3 groups.  At times, the narrative entirely focuses on the 61 patients receiving PVSRIPO, the new drug being tested. Sometimes, the PVSRIPO patients are compared to a historical control of 104 patients previously seen at the same medical center. At other times, the comparison uses the drug NMovo-TTF-100A (reference 19).  The investigators have the raw data from the historical control group, but must rely on the literature to obtain summary results for the other control.  What are the advantages and disadvantages of these comparison groups?  What biases might result?
+
+\textcolor{red}{By using a historical control group from the same institution where the study was done, investigators have the ability to select patients who are similar to those on the study, or to pool data and do adjusted anlayses. Patients who participated in the NMovo-TTF-100A study may or may not be a good comparitor in terms of baseline prognostic factors and since patient level data are not available then adjustment for confouding isn't possible. Patients in the NMovo-TTF-100A study might also have received different treatments than patients in the historical control group from Duke. The choice of comparator will obviously impact interpretation of the result.}
+
+# Question 4
+Use the dataset for this exercise to re-produce Table 1 from the Desjardins paper. Add a column to the table for the standardized mean difference. Answer the following questions. 
+
+\begin{enumerate}
+  \item Which factors, if any are imbalanced between the study participants and the historical controls?
+  
+  \textcolor{red}{The only factors that are not imbalanced are Sex and Age. All other factors have large standardized mean differences.}
+  
+  \item Suppose the imbalanced factors are also prognostic for survival. What kind of bias could result from this? Can anything be done about this bias?
+  
+  \textcolor{red}{If the imbalanced factors are prognostic then they are confounders. Some kind of adjustment could be considered, although the practicality of that in this small sample is questionable.}
+  
+  \item Examine IDH1, TERT, and MGT. Why might you be concerned about the number of patients with Unknown results for these 3 variables? Hint: This is related to the previous question.
+  
+  \textcolor{red}{These 3 factors are not well documented in the study participants who received PVSRIPO (there are a large number of patients whose status is Unknown). Information on these factors is missing at an even higher rate among the historical controls. If these factors are prognostic then this is highly problematic as there is no way to assess the presence of confounding, or to adjust for it. The authors seemed to think that one of these factors might have been prognostic (see page 155: \textit{"Because patients who have tumors with the IDH1 R132 mutation are thought to have a survival advantage..."}). But because of the missing data, the analysis they were able to perform to assess the impact of IDH1 R132 was not ideal. No analyses were done for TERT or MGMT.}
+  
+\end{enumerate}
+
+```{r}
+# Load the data
+data <- read.csv(
+  "H:/GitHub/BIOSTAT702/Exercises/Exercise 3/Desjardins_Table1.csv"
+)
+
+# Convert categorical variables to factors
+data$Karnofsky_performance_status <- factor(data$Karnofsky_performance_status)
+data$Number_of_previous_progressions <- factor(data$Number_of_previous_progressions)
+
+# Reorder the levels of Treatment to put PVSRIPO first
+data$Group <- factor(data$Group, levels = c("PVSRIPO", "Historical Control"))
+
+# Create labels for the variables
+library(labelled)
+var_label(data$Age) <- "Age (years)"
+var_label(data$Sex ) <- "Sex"
+var_label(data$Karnofsky_performance_status) <- "Karnofsky"
+var_label(data$Extent_of_resection_at_diagnosis) <- "Extent of resection"
+var_label(data$Number_of_previous_progressions) <- "No. of previous progressions"
+var_label(data$Previous_treatment_failure_with_bevacizumab) <- "Previous treatment failure w/bevacizumab"
+var_label(data$IDH1_R132_status_at_diagnosis) <- "IDH1 R132 status at diagnosis"
+var_label(data$TERT_status_at_diagnosis) <- "TERT status at diagnosis"
+var_label(data$MGMT_gene_promoter_methylation_status_at_diagnosis) <- "MGMT status at diagnosis"
+
+  
+library(tableone)
+vars <- c("Sex","Age","Karnofsky_performance_status",
+          "Extent_of_resection_at_diagnosis","Number_of_previous_progressions",
+          "Previous_treatment_failure_with_bevacizumab",
+          "IDH1_R132_status_at_diagnosis",
+          "TERT_status_at_diagnosis",
+          "MGMT_gene_promoter_methylation_status_at_diagnosis")
+comparisonTable <- CreateTableOne(vars = vars, strata = "Group", data = data)
+#print(comparisonTable, smd=TRUE, varLabels=TRUE, showAllLevels=TRUE, test=FALSE)
+```
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{H:/GitHub/BIOSTAT702/Exercises/Exercise 3/table_image.jpg}
+\caption{Results from tableone package.}
+\end{figure}
+
+# Question 5
+
+The authors wrote "The median overall survival among all 61 patients who received PVDRIPO was 12.5 months, (95% CI, 9.9 to 15.2) which was \textit{longer} than the 11.3 months (95% CI 9.8 to 12.5) in the historical control group and the 6.6 months in the NMovo-TTF-100A treatment group." Answer the following questions about this statement.
+
+\begin{enumerate}
+  \item Based on the overlap among the confidence intervals, is it likely that the median overall survival between the PVSRIPO groups and the historical controls is statistically different? 
+  
+  \textcolor{red}{The overlap of the CIs is large, suggesting no real difference.}
+  
+  \item In this context, what does "was longer than" mean?  Is what the authors wrote deceptive? Why or why not?
+  
+  \textcolor{red}{The authors are clearly referring to the point estimates, 12.5 and 11.3. Focusing on these is clearly deceptive as it ignores the uncertainty in each of the estimates, which is indicated by the width of the confidence interval for each estimate.}
+
+\end{enumerate}
+
+# Question 6
+Perform the following steps to explore the concept of regression toward the mean in R. The example involves creating a true value of a continuous outcome and simulating two sequential measurements of that outcome at time 1 and time 2. The true value of the outcome never changes, but each of the two measurements of the outcome are different because the measurements are made with error. Perform the steps below and answer the question that follows.
+
+\begin{enumerate}
+  \item Use the rnorm() function to create a vector of 1,000 standard normal random variables. Name the vector Yt, for the true value of Y. Use the code "set.seed(123)" before you generate the observations (any seed will work, but if everyone uses the same one we will be able to easily help you debug any problems you encounter). 
+  
+  \item Create two more vectors of 1,000 standard normal variables.  Name them E1 and E2, for the errors at time 1 and time 2, respectively.
+  
+  \item Create the observed Y1 as Yt+E1.
+  
+  \item Create the observed Y2 as Yt+E2.
+  
+  \item Plot Y2 (on the y-axis) versus Y1 (on the x-axis). Include a reference line with slope 1 and intercept 0 in red. This red line represents the true relationship between Y measured at time 1 and time 2; i.e., it is the same. On the other hand, the cloud of points represents the measured values of Y at time 1 and time 2, which includes error. 
+  
+By eye, it should appear that the slope of the regression line drawn through the cloud of points would be less than 1 but greater than 0 (so, tilted downward toward the X axis relative to the red line but no so far downward that it is flat). In fact, the slope of the regression line through the cloud of points should be 0.5, except for sampling error. You will show this in the next step.
+  
+  \item Fit the regression line. First use lm\_obj \texttt{<-} lm(Y2 \texttt{\~} Y1) to fit the regression line, then use summary(lm\_obj) to discover the slope and intercept.  Was the slope near 0.5?
+  
+  \item Add the regression line to the plot in blue.The blue line represents the relationship between Y measured at time 1 and time 2, including the measurement error.
+  
+  \item Now, filter the data so you include only the observations with Y1 > 2.5. Keep the corresponding values for Y2. These are the values of Y1 that are "observed to be extremely high".
+  
+  \item For the filtered observations, calculate the means of Y1, Y2 and Yt. You should find that the mean of Yt>0.  Moreover, you should find that the mean of Y2 is less than the mean of Y1 and greater than 0.
+\end{enumerate}
+
+You should conclude that, when something is measured with error, selecting an observation because it is extremely high yields a sample that (1) has high true values; and (2) positive error. In other words, extremely high observed values are "partly skill and partly luck". Upon re-measurement, the skill remains but the luck disappears (on average) and thus the second observation will (on average) be less than the first. This phenomenon is termed "regression toward the mean". It is also visible in the plot that you made. For example, look at the values of Y1 > 2.5 on the plot. Notice that the majority of the points are located at Y2 < 2.5.
+
+Apply the concept of regression toward the mean to subgroup analyses. In a clinical trial, there will always be a subgroup exhibiting the strongest treatment effect. If the study were to be repeated, what should you expect?
+
+\textcolor{red}{Because of regression toward the mean we can expect an attenuated effect in the subgroup in a future study. In the worst case, it may appear that there is no effect.}
+
+```{r}
+# Use the rnorm() function to create a vector of 1,000 standard normal 
+# random variables. Name the Yt, for the true value of Y. 
+set.seed(123)
+Yt <- rnorm(n=1000,mean=0,sd=1)
+
+# Create two more vectors of 1,000 standard normal variables.  Name them E1 and 
+# E2, for the errors at time 1 and time 2, respectively.
+E1 <- rnorm(n=1000,mean=0,sd=1)
+E2 <- rnorm(n=1000,mean=0,sd=1)
+
+#Create the observed Y1 as Yt+E1.
+#Create the observed Y2 as Yt+E2.
+Y1 <- Yt + E1
+Y2 <- Yt + E2
+
+# Plot Y2 (on the y-axis) versus Y1 (on the x-axis).  Include a reference line 
+# with slope 1 and intercept 0. By eye, it should appear that the slope of the 
+# regression line fit to the cloud of points is less than 1 and greater than 0.  
+# In fact, it should be 0.5, except for sampling error.
+plot(x=Y1,y=Y2)
+abline(a=0, b=1, col="red")
+
+# Fit the regression line. The slope 0.495. Excellent!
+lm_obj <- lm(Y2 ~ Y1) 
+summary(lm_obj) 
+
+# Add the regression line to the plot.
+abline(lm_obj, col="blue")
+
+# Now, filter the data to include only the observations with Y1 > 2.5.  Keep 
+# the corresponding values for Y2.  These are the values of Y1 that are 
+# "observed to be extremely high".
+index <- Y1 > 2.5
+Y1h <- Y1[index]
+Y2h <- Y2[index]
+Yth <- Yt[index]
+
+# For the filtered observations, calculate the means of Y1, Y2 and Yt. You 
+# should find that the mean of Yt>0.  Moreover, you should find that the 
+# mean of Y2 is less than the mean of Y1 and greater than 0. 
+mean(Y1h)
+mean(Y2h)
+mean(Yth)
+```
+
+# Question 7
+Although this analysis wasn't originally planned, the investigators noticed that survival for the PVSRIPO patients seemed to plateau at 24 months -- in other words, they observed more long-term survivors than their clinical experience suggested. They can tell, after the fact, a biological story about a cause. To "validate" this observation, they want to wait until 24 months have passed since the last patient was enrolled (thus, allowing them to create a binary outcome variable "alive at 24 months vs. not alive at 24 months"). At that point, it seems as if they want to make 2 comparisons: (1) a 2-sample test of proportions comparing PVSRIPO with historical controls; and (2) a 1-sample test of the proportion in the PVSRIPO group, with the null hypothesis value based on the point estimate from the NMovo-TTF-100A treatment group.
+
+Consider the 1-sample test. Why is it biased in favor of the PVSRIPO group?
+
+\textcolor{red}{The test is biased in favor of PVSRIPO because of regression toward the mean. In other words, the investigators have selected patients with extreme observed values from the current study to formulate their hypothesis. Another way to conceptualize the problem is that the investigators have selected a subgroup--patients still alive at 24 months--that is defined based on a post-baseline observation. As discussed in the reading assignment for this class, many factors can influence the emergence of a post-baseline subgroup that have nothing at all to do with treatment. For example, survival to 24 months might be due simply having a good prognosis and not any benefit of the treatment. This may set up an unfair comparison of survival at 24 months in the present study with the point estimate from the NMovo-TTF-100A study.}
+
+# Question 8
+In this article the authors have reported survival for all 61 patients. However, they eventually propose to compare only the 31 patients who received dose level -1 to the historical control as well as the NMovo-TTF-100A study (note: the abstract says the final dose selected was -2 but the remainder of the paper implies that dose level -1 was selected; we are assuming the abstract had a typo). This information is revealed in the following statement on page 155: \textit{It is too early to evaluate our statistical hypothesis of survival at 24 months, because only 20 of the 31 patients at dose level -1...}. Although the authors haven't reported these results yet, we will make an assumption of what those results might be for the purposes of this exercise. Suppose that the final results for these 31 patients are that 6 survived 24 months and 25 did not; in other words, that 19.4\% survive 24 months. Also suppose that 5/31 (16.1\%) of the PVSRIPO patients survive 36 months. Answer the following questions.
+
+1. You will perform a 1-sample test of proportions on the PVSRIPO group, using "alive at 24 months", against a proportion of 8\% (derived from the point estimate of the NMovo-TTF-100A study). First, explain why the test should be 1-sided. Second, discuss the limitations of doing such a test (hint: this discussion requires you to summarize some of the points you discovered in the previous questions).
+  
+    \textcolor{red}{A 1-sided test is acceptable since rejections of H0 in only 1 direction are scientifically interesting, provided the Type I error is controlled appropriately, i.e., at 2.5\%. Major limitations were disussed previously: (1) that the test is biased in favor of PVSRIPO because the test was conceived by selecting the longest observed survival times, and (2) the distribution of prognostic features among patients treated with PVSRIPO may not be comparable to the cohort from which the historical estimate was obtained.}
+
+2. The normal approximation test is not useful in this case because the assumptions are not met (you can demonstrate this to yourself using the prop.test function in R). So, you will use the exact binomial test instead. State the null and alternative hypotheses.
+
+    \textcolor{red}{The null hypothesis is that the proportion alive at 24 months is less than or equal to 8\%. The alternative is that the proportion alive at 24 months is greater than 8\%.}
+    
+3. Show the probability distribution for 0 to 31 surviving patients under H0. Verify that the distribution sums to 1. Hint: you can use the dbinom function.
+    ```{r, echo=TRUE, results='markup'}
+    survivors <- 0:31
+    probs <- dbinom(x=survivors,size=31,prob=.08)
+    probs
+    sum(probs)
+    ```
+
+4. Write a definition of the 1-sided p-value in the context of this problem.
+
+    \textcolor{red}{The 1-sided p-value is the probability of observing 6 or more surviving patients at 24 months out of the 31 patients who received dose level -1 if we the probability of survival at 24 months is .08.}
+
+5. Find this p-value using the null hypothesis distribution you printed out in the question above. Then find the same p-value using the binomial cumulative distribution function (pbinom). Then find the p-value using the binom.test function. All 3 methods should give you the same answer.
+
+    ```{r, echo=TRUE, results='markup'}
+    # 1-sided p-value summing the probability mass function from the code above
+    sum(probs[survivors>=6])
+
+    # 1-sided p-value using the cumulative distribution function. Both methods 
+    # shown here give the complement of the CDF.
+    #
+    1-pbinom(q=5,size=31,prob=.08)
+    pbinom(q=5,size=31,prob=.08,lower.tail=FALSE)
+    
+    # 1-sided p-value using binom.test()
+    binom.test(x=6,n=31,p=0.08,alternative="greater",conf.level=.975)
+    ```
+
+6. What is your alpha level for this test? Do you reject the null hypothesis? How do you interpret the result of the hypothesis test?
+
+    \textcolor{red}{The alpha level should be 2.5\% and we do not reject H0, suggesting there is insufficient evidence to suggest PVSRIPO is superior to the treatment from the NMovo-TTF-100A study.}
+
+7. Even though you know the 1-sided test is appropriate in this context, do a 2-sided test anyway. Before doing the test, how would you expect the p-value from the 2-sided test to compare with the p-value from the 1-sided test? What would your alpha level be for the 1-sided test? What do you actually see for the p-value when you run the 2-sided test using binom.test?
+
+    \textcolor{red}{The p-value for the 2-sided test should be larger than the p-value for the 1-sided test. The alpha level should also be increased to 5\%. When doing the 2-sided test with R we see the p-value is exactly the same!}
+    
+    ```{r, echo=TRUE, results='markup'}
+    # 2-sided test
+    binom.test(x=6,n=31,p=0.08)
+    ```
+
+8. What you see for the 2-sided test may shock you. It is a good example of needing to understand how your software actually works. Many software programs compute the 2-sided p-value for the binomial exact test as 2*min(lower tail p-value, upper tail p-value). But R does not do this! Instead, R implements an algorithm that uses the upper 1-tailed p-value plus SOME of the probabilities for numbers of successes in the lower tail that are less than the floor of the number of successes expected under H0 (.08x31=2 in this case). For example, in this problem the lower tail probabilities for 0 and 1 successes would only be included in the 2-sided p-value if those probabilities were less than the probability of exactly 2 successes. You can see the code that R uses by typing "binom.test" in the console window. The relevant portion of the code is shown below with some helpful annotations that we added. You can play around with it to see how it works. Not all software packages do this! SAS does something quite different.
+
+    ```{r, echo=TRUE, results='markup'}
+    
+    # Excerpt of code from binom.test with annotations.
+    #
+    myTest <- function(x,n,p) {
+      
+      print(paste("myTest called with",x," successes,",n," trials and p=",p))
+      
+      # How close (to the probability of the observed number of successes)?
+      relErr <- 1 + 1e-07
+      
+      # Probability of the observed number of successes x in n trials 
+      # under the null hypothesis probability p
+      d <- dbinom(x, n, p)
+      print(paste("Probability of observed number of successes under H0:",d))
+      
+      # Expected number of successes under H0
+      m <- n * p
+      
+      # If the observed number of successes equals the expected number then
+      # return 1 for the p-value. This doesn't happen in our example.
+      if (x == m) 1 else if (x < m) {
+      
+          # If the observed number of successes is less than the expected number
+          # This code is not executed for our example. So, jump to the next
+          # block of code under the "else" condition.
+          i <- seq.int(from = ceiling(m), to = n)
+          y <- sum(dbinom(i, n, p) <= d * relErr)
+          pbinom(x, n, p) + pbinom(n - y, n, p, lower.tail = FALSE)
+          
+          
+      } else {
+          # If the observed number of successes is greater than the expected.
+          # This is the case for our problem so we have annotated this section
+          # in detail. 
+        
+          # First, enumerate all the possible numbers of observed successes
+          # that are less than the expected number under H0.
+          i <- seq.int(from = 0, to = floor(m))
+          print("Lower tail number of successes, i:")
+          print(i)
+          
+          # Now find the corresponding probabilities. If less than or equal   
+          # to the probability of the observed number of successes under H0
+          # then store the sum of those probabilities in y to be used for the
+          # 2-side p-value. Note, there is a slight correction applied to the
+          # probability of the observed number of successes, i.e., relErr.
+          y <- sum(dbinom(i, n, p) <= d * relErr)
+          print("Lower tail probabilities:")
+          print(dbinom(i, n, p))
+          
+          # The 2-sided p-value is then equal to the sum of the lower tail
+          # probabilities we found in the step above plus the upper tail 
+          # probabilities. In our example none of the lower tail probabilities 
+          # qualify to be included so we get a 2-sided p-value that is equal to 
+          # the 1-sided p-value.
+          pbinom(y - 1, n, p) + pbinom(x - 1, n, p, lower.tail = FALSE)
+      }
+    }
+    
+    # Call the function and see what happens.
+    myTest(6,31,.08)
+    
+    ```
+    
+# Question 9
+In your small group, advocate for 2 positions: (1) the results from the analyses in Question 8  are very promising; and (2) these results aren't very promising. Summarize your arguments using bullet points, which we will discuss as a class.
+

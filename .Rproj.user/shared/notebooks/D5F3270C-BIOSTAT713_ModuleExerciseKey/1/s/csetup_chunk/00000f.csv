@@ -1,0 +1,63 @@
+"0","knitr::opts_chunk$set(warning=FALSE, fig.width=5, fig.height=3.5)"
+"0",""
+"0",""
+"0","##########################################################################"
+"0","##                                                                        ##"
+"0","##  Author: Marissa Ashner, marissa.ashner@duke.edu                     "
+"0","##"
+"0","##  Program: BIOSTAT713_ModuleExerciseKey.rmd                            ##"
+"0","##  Purpose: This program performs analyses to support class notes"
+"0","##    "
+"0","##                                                                        ##"
+"0","##  Input files:  XXX                                       "
+"0","##"
+"0","##                                                                        ##"
+"0","##  Output files: BIOSTAT713_ModuleExerciseKey.pdf                      ##"
+"0","##                                                                        ##"
+"0","##  Change Log:                                                           ##"
+"0","##  07/16/2024 File started                     "
+"0","##  07/22/2024 Added Module Exercises 9, 10"
+"0","##  ?? Added Module Exercises 11, 12, 14"
+"0","##  08/05/2024 Added Module Exercises 15"
+"0","##  08/13/2024 Added Module Exercises 16"
+"0","##  08/15/2024 Added Module Exercises 17"
+"0","##                                                                        ##"
+"0","########################################################################## "
+"0",""
+"0","# setwd()"
+"0","library(tidyverse)"
+"0","library(ggplot2)"
+"0","library(cowplot)"
+"0","library(lubridate)"
+"0","library(knitr)"
+"0","library(survival)"
+"0","library(survminer)"
+"0","library(asaur)"
+"0","library(Hmisc)"
+"2","
+Attaching package: ‘Hmisc’
+
+"
+"2","The following objects are masked from ‘package:DescTools’:
+
+    %nin%, Label, Mean, Quantile
+
+"
+"2","The following objects are masked from ‘package:dplyr’:
+
+    src, summarize
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    format.pval, units
+
+"
+"0","library(doBy)"
+"0","library(adjustedCurves)"
+"0","library(flexsurv)"
+"0",""
+"0","options(knitr.kable.NA="""")"
+"0","options(max.print = .Machine$integer.max)  # don't limit console printing"
+"0",""
+"0","rm(list=ls())"

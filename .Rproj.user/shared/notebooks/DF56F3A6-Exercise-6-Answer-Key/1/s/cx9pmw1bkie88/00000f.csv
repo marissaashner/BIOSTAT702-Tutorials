@@ -1,0 +1,9 @@
+"0","# Simulate Data 
+data = data.frame(X = seq(1, 100, 1)) %>% 
+  mutate(Y = 2 + 0.5*X + rnorm(10, 0, sd = 20), 
+         Y* = Y^2)
+"
+"2","Error: unexpected '=' in:
+""  mutate(Y = 2 + 0.5*X + rnorm(10, 0, sd = 20), 
+         Y* =""
+"

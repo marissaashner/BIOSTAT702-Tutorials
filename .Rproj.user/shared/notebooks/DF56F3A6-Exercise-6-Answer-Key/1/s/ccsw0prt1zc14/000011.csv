@@ -1,0 +1,6 @@
+"0","# Set Seed"
+"0","set.seed(1)"
+"0",""
+"0","# Simulate Data "
+"0","data = data.frame(X = seq(1, 100, 1)) %>% "
+"0","  mutate(Y = 2 + 0.5*X + rnorm(100))"

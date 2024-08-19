@@ -1,0 +1,8 @@
+"0","# plot 
+qqPlot(cs_resid, distribution = ""exp"", ylim = c(0,4))
+"
+"1","[1]"
+"1"," 66"
+"1"," 68"
+"1","
+"

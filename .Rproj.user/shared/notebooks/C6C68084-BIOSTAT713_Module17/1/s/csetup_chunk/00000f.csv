@@ -1,0 +1,65 @@
+"0","knitr::opts_chunk$set(warning=FALSE, fig.width=5, fig.height=3.5)"
+"0",""
+"0",""
+"0","##########################################################################"
+"0","##                                                                        ##"
+"0","##  Author: Marissa Ashner, marissa.ashner@duke.edu                     "
+"0","##"
+"0","##  Program: BIOSTAT713_Module17.rmd                            ##"
+"0","##  Purpose: This program performs analyses to support class notes"
+"0","##    "
+"0","##                                                                        ##"
+"0","##  Input files:  XXX                                       "
+"0","##"
+"0","##                                                                        ##"
+"0","##  Output files: BIOSTAT713_Module17.pdf                      ##"
+"0","##                                                                        ##"
+"0","##  Change Log:                                                           ##"
+"0","##  08/14/2024 File started                                               ##"
+"0","##                                                                        ##"
+"0","########################################################################## "
+"0",""
+"0","# setwd()"
+"0","library(tidyverse)"
+"0","library(ggplot2)"
+"0","library(cowplot)"
+"2","
+Attaching package: ‘cowplot’
+
+"
+"2","The following object is masked from ‘package:lubridate’:
+
+    stamp
+
+"
+"0","library(lubridate)"
+"0","library(knitr)"
+"0","library(survival)"
+"0","library(survminer)"
+"2","Loading required package: ggpubr
+"
+"2","
+Attaching package: ‘ggpubr’
+
+"
+"2","The following object is masked from ‘package:cowplot’:
+
+    get_legend
+
+"
+"2","
+Attaching package: ‘survminer’
+
+"
+"2","The following object is masked from ‘package:survival’:
+
+    myeloma
+
+"
+"0","library(asaur)"
+"0","library(flexsurv)"
+"0",""
+"0","options(knitr.kable.NA="""")"
+"0","options(max.print = .Machine$integer.max)  # don't limit console printing"
+"0",""
+"0","rm(list=ls())"

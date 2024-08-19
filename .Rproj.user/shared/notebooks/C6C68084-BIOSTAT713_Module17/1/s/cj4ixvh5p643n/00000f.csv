@@ -1,0 +1,5 @@
+"0","data(""pharmacoSmoking"")"
+"0",""
+"0","# create the survival object"
+"0","surv_obj_ps = Surv(pharmacoSmoking$ttr,"
+"0","pharmacoSmoking$relapse)"

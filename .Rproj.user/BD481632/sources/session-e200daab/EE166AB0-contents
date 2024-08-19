@@ -1,0 +1,541 @@
+---
+title: "Introduction to Applied Bayesian Data Analysis: Lesson 10"
+subtitle: "Bayesian Linear Regression"
+author: "Marissa Ashner, PhD"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: 
+  pdf_document:
+    number_sections: true
+    toc: true
+    toc_depth: 3
+urlcolor: blue
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(tinytex.verbose = TRUE)
+```
+
+# Background 
+Previous modules in this course (1) established the foundation that you need to think like a Bayesian, and (2) extended that foundation to a regression model setting with a binary outcome. Now, we will transition into linear regression models, with a continuous outcome. 
+
+
+# Prerequisites For This Module
+\begin{enumerate}
+  \item Finish Lessons 1-9
+  \item Read chapters 9-11 in the Bayes Rules textbook.
+\end{enumerate}
+
+# Learning Objectives
+After completing this lesson you will be able to:
+
+\begin{enumerate}
+  \item Use Bayesian linear regression to study associations and make predictions
+  \item Use rstanarm to fit Bayesian linear regression models using weakly informative priors
+  \item Interpret posterior distributions for regression coefficients
+  \item Perform a posterior predictive check
+  \item Assess the predictive accuracy of a Bayesian linear regression model
+\end{enumerate}
+
+# Linear Regression: The Same But Different
+
+Similar to what we covered for logistic regression, both frequentists and Bayesians use linear regression for the same kinds of problems but there are some important differences in the two inferential approaches that affect fitting and interpretation of the linear model. Some of these differences are discussed below. 
+
+## Studying Associations
+
+The frequentist inferential paradigm views regression coefficients as fixed parameters whose value will be estimated from the data. This makes studying associations fairly straightforward; i.e., we can test a hypothesis about the regression parameter being equal to zero. If we reject this null hypothesis then we claim there is an association (statistically anyway; the clinical relevance might be a separate question). The interpretation is that there is one true association and all of the usual frequentist tools for point and interval estimation apply. 
+Bayesians on the other hand assume that regression coefficients are allowed to vary. Thus, they have posterior distributions which are estimated from a prior distribution on the coefficient along with a likelihood based on the new data we collect (just like any other application of Bayes rule!). This makes studying associations a bit different than we are used to since it implies that the regression parameters have a posterior distribution!  
+
+## Predictions 
+
+When regression coefficients have distributions this implies that there is more than one plausible regression model for an outcome in the Bayesian framework. As you might imagine, this makes predicting the outcome a bit more complicated than in the frequentist framework where regression coefficients are treated as fixed (and by extension, there is only 1 true model for the the outcome).
+
+# Formal Statement of the Bayesian Linear Regression Model
+
+The Bayesian linear regression model looks very similar to the frequentist model that you're familiar with except that prior distributions for the regression coefficients can also be specified. Therefore, it helps to separate these two elements of the model as we think about writing it all down. In our example below we will work with a simple 1-predictor model. Models that have more than 1 predictor can be written in a similar fashion. 
+
+To make things concrete, we will assume the model will be used to study the association between percent change in LDL cholesterol over one year and baseline waist circumstance from the Heart and Estrogen/progestin Replacement Study (HERS).
+
+```{r}
+hers_data = read.csv("hersdata.csv")
+head(hers_data)
+str(hers_data)
+```
+
+## The Data Model
+Let $Y_i$ be a random variable denoting the percent change in LDL cholesterol over one year. Then the data model is:
+
+$$Y_i|\beta_0,\beta_1,\sigma^2 \stackrel{ind}{\sim} N(\mu_i, \sigma^2)$$
+
+with the following linear model for $\mu_i$ that depends on baseline waist circumference, $X_{i1}$.
+
+$$\mu_i = \beta_0+\beta_1X_{i1}$$
+
+The model has three parameters. The parameter $\beta_0$ is the expected percent change in LDL cholesterol for those who have $X_1 = 0$ (which we assume is theoretically possible but biologically implausible), $\beta_1$ is the increase (or decrease) in percent change in LDL cholesterol for a one unit increase in waist circumference, and $\sigma$ is the variability from the local mean, $\mu_i$. 
+
+## The Prior Model
+We will specify prior distributions for all parameters, $\beta_0$, $\beta_1$, and $\sigma$. We will specify two normally distributed priors for our regression coefficients, since our outcome ranges from negative infinity to positive infinity. We will specify an exponential prior for the standard deviation parameter, which is reasonable since the parameter must be positive, and the exponential model is also restricted to positive values. For now we will say the following:
+
+\begingroup
+  \begin{align*}
+    &\beta_0 \sim N(\mu_{\beta_0},\sigma_{\beta_0}^2) & \\
+    &\beta_1 \sim N(\mu_{\beta_1},\sigma_{\beta_1}^2) & \\
+    &\sigma \sim Exp(l) &
+  \end{align*}
+\endgroup
+
+In the next section we will discuss some details about how we can decide on the parameters of the prior distributions. 
+
+
+# Using rstanarm to Define Weakly Informative Priors
+
+Similarly to the logistic regression case, since we are using normal distributions as a prior model for the coefficients in our Bayesian linear regression model, the only way to get a "flat" prior is to specify a normal distribution with a very large variance. However, it may be unreasonable for us to do this. One simple reason is that even when we think we know nothing going into a new study, we probably know enough about the boundaries of the support set to say that, for example, values of a percent change near negative infinity or positive infinity are extremely unlikely. So, why give equal prior probability to these extreme values as we assign to more reasonable ones? A brief discussion of this can be found [here](https://mc-stan.org/rstanarm/articles/priors.html#uninformative-is-usually-unwarranted-and-unrealistic-flat-is-frequently-frivolous-and-fictional). More technical details are [here](https://mc-stan.org/users/documentation/case-studies/weakly_informative_shapes.html).
+
+A more attractive approach is to use what RStan calls "weakly informative" priors. These can be centered at 0 (no effect) but scaled to match the variability reflected in the data. In this way, there is not too much prior probability mass around rarely occurring values of the parameter and the resulting posterior distribution will also not be biased in terms of the probability mass around these extreme values. We will cover the form of the weakly informative priors for the intercept, the regression coefficient, and the residual standard deviation parameters in the following sections.
+
+## Weakly Informative Prior Distribution for the Intercept
+
+Just like in the logistic regression setting, Rstanarm requires you to specify prior distributions for the model intercept at the mean of the model covariates. In other words, [rstanarm assumes your prior for the intercept is "centered".](https://mc-stan.org/rstanarm/articles/priors.html) This requirement is mainly for interpretability. In our example, it is not biologically plausible to have a waist circumference value of $X_1 = 0$. Therefore, it doesn't make sense for us to specify our prior belief about the intercept for patients with $X_1=0$. But it does make sense to specify our prior for the intercept at the mean of the waist circumference in the population. \textit{Note: Even though rstanarm asks you to specify a prior for the centered interecept, you do NOT have to center your covariates. Furthermore, when the model is fit, the results are shown without centering.}
+
+If we allow rstanarm to use it's default, weakly informative prior for the model for intercept, this is what it would be:
+
+$$\beta_{0c} \sim N(m_y, (2.5*s_y)^2)$$
+
+where $m_y$ is the mean of $Y$ and $s_y$ is the sample standard deviation of $Y$. We use the subscript $c$ to indicate the prior is on the centered intercept. So, what does a mean of $m_y$ imply in this case? Here, $m_y$ is the expected percent change of LDL cholesterol at the mean waist circumference. 
+Let's take a look at our sample to see what $m_y$ and $s_y$ look like. 
+
+```{r}
+summary(hers_data$LDLchange)
+sd(hers_data$LDLchange)
+hist(hers_data$LDLchange)
+sd(hers_data$LDLchange)*2.5
+```
+
+Given this information, we know that the weakly informative prior for the centered intercept will be the following: 
+
+$$\beta_{0c} \sim N(-6.53, 59.13^2)$$
+We will confirm below that the default prior from Rstanarm result in this same prior distribution. 
+
+## Weakly Informative Prior Distribution for $\beta_1$
+
+As described in the RStanarm [documentation](https://mc-stan.org/rstanarm/articles/priors.html) a weakly informative prior for a regression coefficient $\beta_k$ is defined as follows.
+
+$$\beta_k \sim N\left(0,\left(2.5\times\frac{s_y}{s_x}\right)^2\right)$$
+
+In this formulation, $X$ is the predictor and $s_x$ is the sample's standard deviation of $X$. On the other hand, $s_y$ is the standard deviation of the outcome variable, $Y$.
+
+Let's look at our sample and see what $s_{X_1}$ looks like. 
+
+```{r}
+summary(hers_data$waist)
+sd(hers_data$waist)
+hist(hers_data$waist)
+2.5*sd(hers_data$LDLchange)/sd(hers_data$waist)
+```
+
+Given this information we know that rstanarm's weakly informative prior for $\beta_1$ will be the following. 
+
+$$\beta_1 \sim N(0,4.38^2) $$
+We will confirm below that the default prior from Rstanarm result in this same prior distribution. 
+
+## Weakly Informative Prior Distribution for $\sigma$
+
+Weakly informative priors can also be specified for $\sigma$, which is what RStanarm calls the auxiliary parameter. Remember that the prior on this parameter is an exponential distribution, with hyperparameter $l$. $l$ is the inverse of the scale, which determines how spread out the prior is. Weak priors will have larger scale values (and therefore smaller $l$ values).
+
+As described in the RStanarm [documentation](https://mc-stan.org/rstanarm/articles/priors.html) a weakly informative prior for the residual standard deviation $\sigma$ is defined as follows.
+
+$$\sigma \sim Exp(1/s_y)$$
+Based on our look at $s_y$ in our sample above, we know that rstanarm's weakly informative prior for $\sigma$ will be the following.
+
+$$\sigma \sim Exp(1/23.65 = 0.042)$$
+
+## Rstanarm Code for Weakly Informative Priors
+
+```{r, warning=FALSE, message=FALSE, results=FALSE}
+library(bayesrules)
+library(rstanarm)
+library(bayesplot)
+library(tidyverse)
+library(tidybayes)
+library(broom.mixed)
+
+# Using rstanarm weakly informative priors for the intercept, slope, and auxiliary parameter
+#
+hersModelWeakPrior <- stan_glm(LDLchange ~ waist,
+                                 data = hers_data, 
+                                 family = gaussian,
+                                 chains = 4, 
+                                 iter = 5000*2, 
+                                 seed = 84735,
+                                 prior_PD = TRUE)
+
+```
+
+Notice that we're using the "stan_glm" function, which fits Bayesian regression models. In this case however, we're asking rstanarm to just simulate the prior distributions, which is indicated by the "prior_PD=TRUE" option. Note that we can leave out any specification of the priors, and this tells rstanarm to use weakly informative priors for all parameters. We can summarize the results using the "prior_summary" function.
+
+```{r}
+prior_summary(hersModelWeakPrior)
+```
+
+The output above shows that rstanarm has done what we anticipated for all parameters. Notice there are two lines of output for the prior distribution on each parameter. The first line gives the initial default setting whereas the second line tells us that rstanarm has re-scaled the standard deviation for the prior to match the variability in our data, yielding the prior distribution that we anticipated as described in the notes above.
+
+## Visualizing the Simulated Priors 
+
+An important corollary of the fact that our regression coefficients have prior distributions is that there is more than one possible model for the outcome under our prior belief (think about it: given any three values of $\beta_0$, $\beta_1$ and $\sigma$ you are specifying a unique model!). There are some nice tools available for us to visualize what this means. It can be helpful for us to go through this process to see if the prior we've specified adequately captures the state of our knowledge before doing the study. Here's an example using the weakly informative priors. 
+
+### Plot the Prior Distributions
+
+First, we can simply plot the MCMC simulated prior distributions for each of our parameters, just to illustrate the idea that the regression parameters have a prior distribution.
+
+```{r simPrior, echo=TRUE, results=TRUE, warning=FALSE, message=FALSE}
+# Plot the prior distributions f
+mcmc_dens(hersModelWeakPrior,pars=c("(Intercept)", "waist", "sigma"))
+```
+
+### Plot Simulated Prior Models and Datasets
+
+Now, using the "add_linpred_draws" function, we can randomly samples 100 possible models from the prior, which includes the prior distribution on $\beta_0$, $\beta_1$, and $\sigma$. 
+
+```{r, echo=TRUE, results=TRUE, warning=FALSE, message=FALSE}
+# Randomly sample 100 possible prior models
+hers_data %>% 
+  add_linpred_draws(hersModelWeakPrior, ndraws = 100) %>% 
+  ggplot(aes(x = waist, y = LDLchange)) +
+  geom_line(aes(y = .linpred, group = .draw), linewidth = 0.1)
+```
+
+
+This plot shows several important features. First, many of the lines are horizontal (0 slope) which reflects the fact that the prior distribution for $\beta_1$ is centered at 0. But, some lines have positive slope and some have negative slope. In other words, there's a lot of uncertainty about the effect of baseline waist circumference on the one-year percent change in LDL cholesterol. When you are tuning priors for your regression coefficients it can be helpful to make plots like this because it puts your prior belief about all of the regression coefficients into context, so to speak. 
+
+You may notice that these simulated models don't tell us much about the prior information on our auxiliary parameter, $\sigma$. We can also plot some of the simulated datasets using plausible values for our parameters, using the "add\_predicted\_draws" function.
+
+```{r, echo=TRUE, results=TRUE, warning=FALSE, message=FALSE}
+# Randomly sample 4 possible prior datasets
+hers_data %>% 
+  add_predicted_draws(hersModelWeakPrior, n = 4) %>% 
+  ggplot(aes(x = waist, y = LDLchange)) +
+  geom_point(aes(y = .prediction, group = .draw), size = 0.2) + 
+  facet_wrap(~ .draw)
+```
+
+This plot shows that some datasets have very little variation and others have a lot of variation. This shows a lot of uncertainty about whether the relationship between waist circumference and percent change in LDL cholesterol is weak or strong. 
+
+# Specifying Weakly Informative Priors for Multiple Linear Regression 
+
+For the rest of the notes, let's assume that we aren't just interested in the association between waist circumference and percent change in LDL cholesterol, but we want to add another binary predictor; namely, whether or not the patient received hormone therapy or placebo in the trial. 
+
+We can use the exact same code as before to simulate weakly informative priors for the multiple linear regression model, with the addition of the new variable to our model formula.
+
+```{r, echo=TRUE, results=FALSE, warning=FALSE, message=FALSE}
+hers_data$HT = hers_data$HT %>% as.factor()
+hersModelMLRWeakPrior <- stan_glm(LDLchange ~ waist + HT,
+                                 data = hers_data, 
+                                 family = gaussian,
+                                 chains = 4, 
+                                 iter = 5000*2, 
+                                 seed = 84735,
+                                 prior_PD = TRUE)
+```
+
+
+```{r}
+prior_summary(hersModelMLRWeakPrior)
+```
+
+We can see from the prior summary that all the priors are the same as previously, but we have an additional prior for the hormone therapy variable. The scale for this new variable uses the sample standard deviation of the binary variable for the calculation. 
+
+# Simulating from the Posterior 
+
+Updating the priors with our new data (i.e., simulating from the posterior) is easy as shown in the program code below.
+
+```{r, echo=TRUE, results=FALSE, warning=FALSE, message=FALSE}
+# Simulate the posterior
+hersmodelMLR <- update(hersModelMLRWeakPrior, prior_PD = FALSE)
+```
+
+## MCMC Diagnostics 
+
+The usual MCMC diagnostics are available for fitted models and should be inspected. 
+
+We first look at the trace and density plots and see they are behaving well.
+
+```{r}
+# Trace plots of parallel chains 
+mcmc_trace(hersmodelMLR, size = 0.1)
+
+# Density Plots of parallel chains 
+mcmc_dens_overlay(hersmodelMLR)
+```
+
+We then look at the autocorrelation plots and the effective sample size ratio and again see they are behaving well.
+
+```{r, warning=FALSE}
+# Autocorrelation should drop to zero quickly
+mcmc_acf(hersmodelMLR)
+
+# Effective sample size ratio should be at least 0.1
+neff_ratio(hersmodelMLR)
+```
+
+## Interpreting the Posterior 
+
+Now that we've successfully simulated the posterior regression model and checked the MCMC diagnostics, we can begin interpreting what all this means. \textit{Remember that the estimate for the intercept is NOT centered even though the prior on the intercept was considered to be at the centered value of the covariate.} 
+
+### Numerical Summaries 
+
+We can use numerical summaries to begin interpreting the posterior distributions for all parameters. First, we simply print the output of the model update, which shows the median of the posterior distributions.
+
+The column titled MAD\_SAD shows a measure of variability for the posterior distribution. In order to avoid deviating into a long discussion about the technical details of what MAD\_SAD is, we can comfortably treat the numbers shown in this column as standard deviations of the posterior distributions. This is due to the fact that we have nearly symmetric posterior distributions. 
+
+```{r, echo=TRUE, results=TRUE, warning=FALSE, message=FALSE}
+print(hersmodelMLR,digits=3)
+```
+
+We can also calculate posterior summary statistics using the "tidy" function, which gives us the estimate and standard error, which are equivalent to the median and MAD\_SD from above. We can also specify the level for a posterior credible interval.
+
+```{r}
+# Posterior summary statistics
+tidy(hersmodelMLR, effects = c("fixed", "aux"),
+     conf.int = TRUE, conf.level = 0.95)
+```
+
+We can alternatively save the values from the MCMC chains as a matrix and look at numerical summaries and HPD credible intervals. We see that the HPD CI for the hormone therapy coefficient is almost equivalent to the equal tail one calculated above.
+
+```{r, echo=TRUE, results=TRUE, warning=FALSE, message=FALSE}
+mcmc_chain = as.matrix(hersmodelMLR)
+
+summary(mcmc_chain[,"(Intercept)"])
+summary(mcmc_chain[,"waist"])
+summary(mcmc_chain[,"HTplacebo"])
+summary(mcmc_chain[,"sigma"])
+
+# Find a 95% highest posterior density credible interval for HTplacebo
+hdi(mcmc_chain[,"HTplacebo"])
+```
+
+### Posterior Visualizations 
+
+It also helps to visualize the posterior distributions and plausible models. First, we can simply visualize the approximate posterior models.
+
+```{r}
+mcmc_dens(hersmodelMLR)
+```
+
+Then, similar to what we did for the prior simulations, we can simulate model lines to visualize a number of plausible relationships from the posterior. 
+
+```{r}
+# Randomly sample 100 possible posterior models
+hers_data %>% 
+  add_linpred_draws(hersmodelMLR, ndraws = 100) %>% 
+  ggplot(aes(x = waist, y = LDLchange, color = HT)) +
+  geom_line(aes(y = .linpred, group = paste(HT, .draw)), alpha = 0.1) + 
+  geom_point(data = hers_data, size = 0.5)
+```
+
+It is evident from this plot that waist circumference does not seem to impact percent change in LDL cholesterol, but taking hormone therapy does lower LDL cholesterol as compared to the placebo group. 
+
+We can also visualize the posterior results for $\sigma$, again by presenting a few simulated datasets, this time under posterior plausible values of $\sigma$. We see that all four plots have similar spread of the data, indicating some certainty about the strength of the relationship.
+
+```{r, echo=TRUE, results=TRUE, warning=FALSE, message=FALSE}
+# Randomly sample 4 possible posterior datasets
+hers_data %>% 
+  add_predicted_draws(hersmodelMLR, n = 4) %>% 
+  ggplot(aes(x = waist, y = LDLchange, color = HT)) +
+  geom_point(aes(y = .prediction, group = .draw), size = 0.2) + 
+  facet_wrap(~ .draw)
+```
+
+# Comparison With Frequentist Model
+
+Since we've used weakly informative priors in our Bayesian linear regression model, the median of our posterior distributions for the regression coefficients should be close to the parameter estimates from our frequentist model. This is because the posterior is determined mainly by the data when weak priors are used (refresh your memory about this by reviewing lesson 4).
+
+```{r, echo=TRUE, results=TRUE, warning=FALSE, message=FALSE}
+
+# Frequentist linear regression model
+frequentistModel = lm(LDLchange ~ waist + HT,data=hers_data)
+summary(frequentistModel)
+
+# Median estimates from the Bayesian model
+print(hersmodelMLR,digits=3)
+```
+
+
+# Studying Associations
+
+When using the linear regression model to study associations, i.e., to determine if there is ample posterior evidence that there's an association between the outcome (percent change in LDL cholesterol) and hormone therapy ($\beta_2 \neq 0$), there are several types of posterior evidence we can use. 
+
+## Visual Evidence 
+
+In our visual examination of the posterior plausible scenarios above, we see a stark difference in the outcome between those on hormone therapy and those on the placebo. If there were no relationship, the plausible scenarios for the two treatment groups would overlap. 
+
+## Numerical Evidence from the Posterior Credible Interval 
+
+More rigorously, we can look at posterior credible intervals to look at the association between percent change in LDL cholesterol and hormone therapy. Our 95\% HPD credible interval above for this parameter was $(9.12, 12.66)$, which is completely and well above the null value of zero.  
+
+## Numerical Evidence from a Posterior Probability 
+
+More specifically, we might want to know the posterior probability that the coefficient exceeds some value that might be clinically meaningful. We can use the MCMC simulated posterior distributions to find these posterior probabilities simply by counting as shown below.
+
+```{r, echo=TRUE, results=TRUE, warning=FALSE, message=FALSE}
+
+# Posterior probability that the coefficient is greater than 0. This
+# tells us the probability that hormone therapy is positively associated
+# with percent change in LDL cholesterol.
+sum(ifelse( mcmc_chain[,"HTplacebo"] > 0, 1, 0 )) / length(mcmc_chain[,"HTplacebo"])
+
+# Posterior probability that the coefficient is above 10 (a 10% increase in 
+# LDL cholesterol when on placebo as compared to hormone therapy)
+sum(ifelse(mcmc_chain[,"HTplacebo"] > 10, 1, 0 )) / length(mcmc_chain[,"HTplacebo"])
+```
+
+# Predicting Percent Change in LDL Cholesterol based on Waist Circumference and Treatment Group 
+
+In real-world applications a model that's used for prediction would probably have more than 1 variable in it and the selection of those variables would be guided by scientific and statistical principles, e.g., by drawing DAGs and using methods like LASSO. For the sake of brevity we are going to skip all of those details and simply use our earlier example, which has two predictors. In a real world application we would specify informative priors if we could.
+
+## The Posterior Predictive Model 
+
+If we wanted to predict the percent change in LDL cholesterol for someone with a waist circumference of 82 in the hormone therapy treatment group, we would probably first plug these predictors into our model with the posterior medians for each of the regression coefficients. 
+
+However, remember that this ignores two sources of variability: (1) the sampling variability in the data (i.e., the outcome typically deviates from the model line) and (2) posterior variability in the parameters (i.e., the posterior medians are simply the center of a range of plausible values for the regression coefficients). This second source comes from the fact that our regression coefficients have posterior distributions. An important implication of this is that there is more than one posterior plausible model for the outcome.
+
+The posterior predictive model accounts for both sources of variability by giving us the overall chance of observing a certain percent change in LDL cholesterol. The posterior predictive model for $X_1 = 82$ and $X_2 = 0$ (Hormone Therapy) can be approximated by simulating a prediction from the model evaluated at each parameter set from the Markov Chains. Each posterior distribution was estimated by 4 parallel Markov chains of length 5,000. Therefore, each of the 20,000 plausible parameter sets gives a different prediction for these specified predictor values.
+
+For example, let's look at the first set of plausible parameter values from the posterior simulation. 
+
+```{r}
+mcmc_chain[1,]
+```
+
+From this parameter set, we would take one random draw from the following distribution to get our first prediction. 
+
+$$Y_{\text{pred}}^{(1)}|\beta_0,\beta_1,\beta_2,\sigma \sim N(-11.5 + 82*0.00082 + 0*10.6, 23.2^2)$$
+
+This is repeated for all 20,000 parameter sets of the Markov Chain. We can automate this in R by using the "posterior\_predict" function in Rstanarm. 
+
+```{r}
+hersPPD_82HT = posterior_predict(hersmodelMLR, 
+                            newdata = data.frame(waist = 82,
+                                                 HT = "hormone therapy"))
+
+# 95% posterior CI 
+posterior_interval(hersPPD_82HT, prob = 0.95)
+
+# plot approximate predictive model 
+mcmc_dens(hersPPD_82HT) + xlab("% Change in LDL for Waist = 82 and Hormone Therapy")
+```
+
+## Posterior Predictive Check 
+
+How consistent are the predictions from this model with the data that we have? We can answer this question using a posterior predictive check. 
+
+A posterior predictive check will see if the posterior model is able to simulate data that's similar to the original dataset provided. To do this, we can essentially create posterior predictive models (as done above) for each of the observations in our dataset. This will give us 20,000 new predicted datasets. We can plot these against the original data to compare. 
+Again, this can be automated using the "pp\_check" function from Rstanarm. You can specify how many of the 20,000 datasets to examine; we use 50.
+
+```{r}
+pp_check(hersmodelMLR, nrep = 50) + 
+  xlab("% Change in LDL Cholesterol")
+```
+
+We can see that the predictions capture the typical percent change in LDL cholesterol fairly well, although it appears that the height of the peak is not quite captured by most of the predictions.
+
+
+## Assessing Predictive Accuracy
+
+Generally, you may fit several different models and want to compare them to pick the best. To compare, you might want to assess the predictive accuracy of each of your models and choose the one with the highest accuracy. Here, we will go through some various methods to assess predictive accuracy, but we will only use our one model as the example, rather than comparing several models. 
+
+### Posterior Predictive Summaries 
+
+To start, we can assess how well the model predicts on the data points we used to build the model. One way to do this visually is the posterior predictive check shown above. There are also other ways to look at this.
+
+We can track whether or not an observed $Y$ value falls into its posterior prediction interval. The "ppc_intervals" function in the bayesplot package will give us a visual of where each observed $Y$ falls related to its posterior prediction interval. This uses the posterior predictive models we found above. We show the first 100 observations.
+
+```{r}
+hersPPD = posterior_predict(hersmodelMLR)
+
+ppc_intervals(hers_data$LDLchange[1:100], 
+              yrep = hersPPD[,1:100], 
+              prob_outer = 0.95)
+
+```
+
+In the plot above, the darker line represents the 50\% interval, and the outer, lighter line represents the 95\% interval. We see that almost all observations fall within the 95\% interval, and quite a few fall within the 50\% interval. 
+
+To formalize this numerically, the "prediction\_summary" function in the bayesrules package calculates the following: 
+\begin{enumerate}
+\item The median absolute error (MAE): the median absolute difference between the observed $Y$ and their posterior predictive means $Y'$
+\item Scaled median absolute error: the median of the absolute error for each $Y$ divided by its posterior predictive standard deviation
+\item The proportion of observed values that fall within 50\% of the posterior prediction interval
+\item The proportion of observed values that fall within 95\% of the posterior prediction interval
+\end{enumerate}
+
+```{r}
+prediction_summary(hersmodelMLR, data = hers_data[1:100,])
+```
+
+### Cross Validation 
+
+As with all models, simply analyzing the predictive accuracy on the exact sample that built the model can result in optimistic results. We can use cross validation to combat this. 
+
+```{r}
+cv_procedure = prediction_summary_cv(model = hersmodelMLR,
+                                     data = hers_data[1:100,],
+                                     k = 5)
+cv_procedure$folds
+cv_procedure$cv
+```
+
+### Expected Log-Predicted Density (ELPD)
+
+The ELPD evaluates the compatibility of a new outcome $Y_{\text{new}}$ with its corresponding posterior predictive model. The ELPD is calculated by taking the average log of the posterior predictive pdf across all possible outcome values $Y_{\text{new}}$. The higher the ELPD, the greater the posterior predictive accuracy when predicting new outcome points. 
+
+The "loo" function in Rstanarm uses leave-one-out CV to estimate the ELPD. 
+
+```{r}
+hersELPD = loo(hersmodelMLR)
+hersELPD$estimates
+```
+
+While the ELPD estimate and standard error are not easy to interpret for one model, they are useful for comparing multiple models. Generally, the posterior predictive accuracy of model 1 is significantly greater than model 2 if 
+\begin{enumerate}
+\item ELPD$_1$ > ELPD$_2$ AND 
+\item ELPD$_2$ is at least two standard errors below ELPD$_2$
+\end{enumerate}
+
+The standard error can be found using the "loo\_compare" function.
+
+
+# Exercises
+The following exercises are based on a 200-person subset of the data from the Framingham Heart Study (framingham.csv). We will be exploring the relationship between baseline values from the study using Bayesian Linear Regression approaches. The primary outcome we will be looking at is the continuous systolic blood pressure (sbp) measure.
+
+\begin{enumerate}
+  \item Assume we want to explore the linear association between systolic blood pressure (sbp; units mm Hg) and serum cholesterol (scl; units mg/100mL), while controlling for potential confounders age, bmi, and sex (reference group is men).
+  \begin{enumerate}
+    \item Write a Bayesian linear regression model based on the research question. In addition to specifying the model in mathematical notation, give a plain English description of what the notation means. Do this separately for the data model and priors as indicated below. You can specify weakly informative priors for all parameters -- please show what you expect rstanarm to calculate for the hyperparameters of the weakly informative priors. Then, we will check this with rstanarm in the next part.
+    \begin{enumerate}
+      \item Write the data model 
+      \item Write the prior model for $\beta_0$
+      \item Write the prior model for $\beta_1$ (Note: The priors for $\beta_2$, $\beta_3$, and $\beta_4$ are constructed similarly).
+      \item Write the prior model for $\sigma$
+    \end{enumerate}
+    \item Simulate the priors for your model
+    \begin{enumerate}
+      \item Output the prior summary. 
+      \item Simulate 100 models that represent your prior belief about the effect of serum cholesterol on systolic blood pressure, controlling for potential confounders. 
+      \begin{itemize}
+        \item HINT: use add\_linpred\_draws() to plot these models. 
+        \item HINT 2: Because there are several confounders, the linear predictors will look non-linear unless you specify values for the confounders. Simulate these models by using the mean values for the BMI and age. Color the lines by sex (See chapter 11 in your book for code for coloring by a binary predictor, or Section 8.2.2 in the Lesson 10 Notes). 
+      \end{itemize}
+      \item Simulate 4 datasets that represent your prior belief about the effect of serum cholesterol on systolic blood pressure, controlling for potential confounders. Color by sex. HINT: use add\_predicted\_draws().
+    \end{enumerate}
+    \item Simulate the posterior distributions using the Framingham Heart Study data. 
+    \begin{enumerate}
+      \item Interpret the median and 95\% credible interval with respect to the research question about whether serum cholesterol is associated with systolic blood pressure, adjusting for confounders.
+      \item What is the posterior probability that serum cholesterol has a positive association with systolic blood pressure?
+    \end{enumerate}
+  \end{enumerate}
+  \item Now assume we want to explore the predictive capability of serum cholesterol, age, bmi, and sex on systolic blood pressure. Use the same model from above to answer the following questions. 
+  \begin{enumerate}
+    \item To start, let's assess how well the model predicts on the data points we used to build the model. To do this, create a plot of the posterior prediction intervals and output a numerical posterior predictive summary. What do you conclude from the results? 
+    \item Now, assess the predictive accuracy using 10-fold cross validation. How do the summary results compare to your within sample assessment? 
+  \end{enumerate}
+\end{enumerate}

@@ -1,0 +1,16 @@
+README for CARDIA PIMs and Function Aging Center Project Folder 
+
+R Project: 
+As of 8/15/2024, everything needed for final analyses run in the "R Project" folder. This is what we can give to CARDIA. It should be fully reproducible and self-contained. All future work should be done here. 
+
+data: 
+Contains all data for the project. All data needed copied into R Project folder.
+
+documents: 
+Contains proposal documents, SAPs, and other various documents related to the project.
+
+output: 
+Contains output for all runs of all the programs. 
+
+programs: 
+Contains original programs. All relevant programs copied into R Project folder. 
