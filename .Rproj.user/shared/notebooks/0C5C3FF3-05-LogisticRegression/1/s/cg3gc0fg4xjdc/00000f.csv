@@ -1,0 +1,7 @@
+"0","# Load Data 
+# will be called ""nsduh_adult_sub"" in your environment 
+load(here(""data/nsduh2019_adult_sub_rmph.RData""))
+"
+"2","Error in here(""data/nsduh2019_adult_sub_rmph.RData"") : 
+  could not find function ""here""
+"

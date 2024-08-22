@@ -1,0 +1,11 @@
+"0","# predict probability of lifetime marijuana use for a male 
+predict(fit1, 
+        newdata = data.frame(demog_sex = ""Male""), 
+        type = ""response"")
+"
+"1","        1 "
+"1","
+"
+"1","0.5579399 "
+"1","
+"

@@ -1,0 +1,16 @@
+"0","# plot 
+ggplot(data = data_calibrationplot, aes(P.EXP, P.OBS)) + 
+  geom_point(pch = 2, size = 4) +
+  geom_abline(aes(color = ""Perfect"", intercept = 0, slope = 1), lty = 2, size = 1.5) + 
+  geom_smooth(aes(color = ""Observed""), se = FALSE) + 
+  geom_errorbar(aes(ymin = `1`, ymax = `2`), width = 0) + 
+  xlim(c(0,1)) + ylim(c(0,1)) + 
+  labs(x = ""Average Predicted Probability"", 
+       y = ""Observed Proportion"", 
+       title= ""Calibration Plot"") +   
+  scale_color_manual(name = ""Legend"", 
+                     values = c(""Perfect"" = ""darkgray"", ""Observed"" = ""black"")) +
+  theme(legend.position = ""top"")
+"
+"1","[38;5;232m`geom_smooth()` using method = 'loess' and formula = 'y ~ x'[39m
+"

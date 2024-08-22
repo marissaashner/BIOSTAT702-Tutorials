@@ -1,0 +1,44 @@
+"0","anova(fit1, test = ""Chisq"")
+"
+"1","Analysis of Deviance Table
+
+Model: binomial, link: logit
+
+Response: mj_lifetime
+
+Terms added sequentially (first to last)
+
+"
+"1","
+"
+"1","         "
+"1"," Df"
+"1"," Deviance"
+"1"," Resid. Df"
+"1"," Resid. Dev"
+"1"," Pr(>Chi)"
+"1","   "
+"1","
+NULL     "
+"1","   "
+"1","         "
+"1","       999"
+"1","     1386.0"
+"1","         "
+"1","   "
+"1","
+demog_sex"
+"1","  1"
+"1","   8.3764"
+"1","       998"
+"1","     1377.6"
+"1"," 0.003801"
+"1"," **"
+"1","
+"
+"1","---
+Signif. codes:  "
+"1",""
+"1","0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1"
+"1","
+"

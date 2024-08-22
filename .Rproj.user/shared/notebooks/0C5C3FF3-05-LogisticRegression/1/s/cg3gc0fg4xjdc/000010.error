@@ -1,0 +1,1 @@
+{"frames":[{"func":"load(here(\"data/nsduh2019_adult_sub_rmph.RData\"))","file":"","line_number":0,"end_line_number":0,"character_number":0,"end_character_number":0}],"message":"Error in here(\"data/nsduh2019_adult_sub_rmph.RData\") : \n  could not find function \"here\"\n"}
