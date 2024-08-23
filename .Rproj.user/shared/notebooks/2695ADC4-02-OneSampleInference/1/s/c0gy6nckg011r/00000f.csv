@@ -1,0 +1,3 @@
+"0","ggplot(nhanes.bmxwt, aes(sample = BMXWT)) +"
+"0","  stat_qq(size = 2.5, color = 'red') +"
+"0","  stat_qq_line()"

@@ -1,0 +1,14 @@
+"0","# Plot 
+ggplot(nhanes.bmxwt, aes(x = BMXWT)) +
+  geom_histogram(aes(y = ..density..), 
+                 fill = ""grey"", color = ""black"") +
+  geom_density(color = ""red"", size = 1.5) +
+  geom_line(data = normal_density, aes(x = x, y = y), 
+            color = ""blue"", size = 1.5, linetype = ""dashed"") +
+  labs(title = ""Histogram with Density and Normal Curve"",
+       x = ""BMXWT"",
+       y = ""Density"") +
+  theme_minimal()
+"
+"1","[38;5;232m`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.[39m
+"

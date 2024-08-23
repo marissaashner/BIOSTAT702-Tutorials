@@ -1,10 +1,30 @@
-"0","
-# for power analyses 
-library(pwr)
-library(pwrss)
-"
+"0","## NOTE: If you do not have a package installed, you must install it first"
+"0","# For example, you can run the following code if you don't have the gtsummary package:"
+"0","# install.packages(""gtsummary"")"
+"0",""
+"0",""
+"0","# for navigating within the R project"
+"0","library(here)"
+"0",""
+"0","# for data wrangling "
+"0","library(tidyverse)"
+"0",""
+"0","# for skewness"
+"0","library(moments)"
+"0",""
+"0","# for CIs for one sample proportion tests"
+"0","library(DescTools)"
+"0",""
+"0","# for power analyses "
+"0","library(pwr)"
+"0","library(pwrss)"
 "2","
 Attaching package: ‘pwrss’
+
+"
+"2","The following object is masked from ‘package:DescTools’:
+
+    power.chisq.test
 
 "
 "2","The following object is masked from ‘package:stats’:

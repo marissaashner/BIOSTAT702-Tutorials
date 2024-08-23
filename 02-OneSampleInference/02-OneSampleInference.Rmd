@@ -71,6 +71,9 @@ library(here)
 # for data wrangling 
 library(tidyverse)
 
+# for skewness
+library(moments)
+
 # for CIs for one sample proportion tests
 library(DescTools)
 
@@ -294,16 +297,51 @@ sim_func_proptest(1000)
 
 -   Let's first take a look at the variable of interest, after limiting the sample to those with observed body weight. We can summarise the variable quantitatively and visually.
 
+### Quantitative Summary 
+
+We can simply use the `summary()` function to look at the quartiles and mean of the outcome variable. We can also measure skewness using the function `skewness()` in the `moments` package.
+
 ```{r}
 # take complete BMXWT only
 nhanes.bmxwt = nhanes %>% filter(complete.cases(BMXWT))
 
 summary(nhanes.bmxwt$BMXWT)
+
+# skewness 
+skewness(nhanes.bmxwt$BMXWT)
 ```
 
-```{r}
-hist(nhanes.bmxwt$BMXWT)
+### Visual Summary 
+
+We can visualize the distribution of the outcome variable by creating a histogram. We can also overlay a kernel density plot and/or a normal density.
+
+```{r, message = FALSE}
+# Create a data frame for the normal density curve
+normal_density <- data.frame(
+  x = seq(min(nhanes.bmxwt$BMXWT), max(nhanes.bmxwt$BMXWT), length.out = 100)) %>% 
+  mutate(y = dnorm(x, mean = mean(nhanes.bmxwt$BMXWT), sd = sd(nhanes.bmxwt$BMXWT)))
+
+# Plot 
+ggplot(nhanes.bmxwt, aes(x = BMXWT)) +
+  geom_histogram(aes(y = ..density..), 
+                 fill = "grey", color = "black") +
+  geom_density(color = "red", size = 1.5) +
+  geom_line(data = normal_density, aes(x = x, y = y), 
+            color = "blue", size = 1.5, linetype = "dashed") +
+  labs(title = "Histogram with Density and Normal Curve",
+       x = "BMXWT",
+       y = "Density") +
+  theme_minimal()
 ```
+
+We can also use a QQ-plot to compare the distribution to a normal distribution. 
+
+```{r}
+ggplot(nhanes.bmxwt, aes(sample = BMXWT)) +
+  stat_qq(size = 2.5, color = 'red') +
+  stat_qq_line()
+```
+
 
 ## Two Sided T-Test 
 
@@ -342,6 +380,29 @@ bmxwt.test.onesided = t.test(x = nhanes.bmxwt$BMXWT,
 
 # display all output from the test 
 bmxwt.test.onesided
+```
+
+## Sign Test 
+
+The sign test is equivalent to a 2-sided binomial exact test with $p_0 = 0.5$.
+
+```{r}
+# number of successes is number greater than mu_0
+successes <- sum(nhanes.bmxwt$BMXWT > 83)
+
+# trials is the total number in the sample
+trials <- nrow(nhanes.bmxwt)
+
+binom.test(successes,trials, 0.5)
+```
+
+## Signed Rank Test
+
+You can use the `wilcox.test()` function to perform a signed rank test. The input to this function is the outcome variable minus $\mu_0$.
+
+```{r}
+wilcox.test(nhanes.bmxwt$BMXWT - 83, 
+            correct=FALSE)
 ```
 
 ## Power Calculation

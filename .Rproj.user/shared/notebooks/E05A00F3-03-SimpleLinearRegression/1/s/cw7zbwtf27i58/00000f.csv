@@ -1,11 +1,31 @@
-"0","library(olsrr)
+"0","# for splines
+library(Hmisc)
+"
+"2","Registered S3 method overwritten by 'htmlwidgets':
+  method           from         
+  print.htmlwidget tools:rstudio
 "
 "2","
-Attaching package: ‘olsrr’
+Attaching package: ‘Hmisc’
 
 "
-"2","The following object is masked from ‘package:datasets’:
+"2","The following object is masked from ‘package:psych’:
 
-    rivers
+    describe
+
+"
+"2","The following objects are masked from ‘package:DescTools’:
+
+    %nin%, Label, Mean, Quantile
+
+"
+"2","The following objects are masked from ‘package:dplyr’:
+
+    src, summarize
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    format.pval, units
 
 "

@@ -74,6 +74,9 @@ library(tidyverse)
 # for nice-looking tables 
 library(gtsummary)
 
+# for splines
+library(Hmisc)
+
 # for checking assumptions / diagnostics 
 library(car)
 library(olsrr)
@@ -136,6 +139,24 @@ ggplot(data = nhanesf) + geom_point(aes(BMXWAIST, LBDGLUSI))
 # Plot the scatterplot with an appended best fit line 
 ggplot(data = nhanesf, aes(BMXWAIST, LBDGLUSI)) + geom_point() + geom_smooth(method = lm, se = FALSE)
 ```
+
+### Fitting smooth curves to the scatterplot 
+
+Rather than just appending the best fit line, we can also append smoothers such as a LOESS curve or a spline. Here, we will show an example using a LOESS curve and a restricted cubic spline (RCS). Note there are other types of splines available as well. The RCS function `rcspline.eval()` is in the `Hmisc` package.
+
+```{r}
+# plot scatterplot with appended LOESS curve 
+ggplot(data = nhanesf, aes(BMXWAIST, LBDGLUSI)) + geom_point() + 
+  geom_smooth(method = "loess", se = FALSE) 
+
+# plot scatterplot with appended RCS
+ggplot(data = nhanesf, aes(BMXWAIST, LBDGLUSI)) + geom_point() + 
+  geom_smooth(method = "lm",
+              # look at the arguments for ?rcspline.eval to see how you can change the number and location of knots 
+              formula = y ~ rcspline.eval(x),
+              se = FALSE)
+```
+
 
 # Fitting the Linear Model 
 
