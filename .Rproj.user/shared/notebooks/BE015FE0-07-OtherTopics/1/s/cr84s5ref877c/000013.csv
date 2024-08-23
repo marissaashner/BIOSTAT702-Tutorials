@@ -1,0 +1,13 @@
+"0","# confidence interval 
+exp(confint(model))
+"
+"2","Waiting for profiling to be done...
+"
+"1","   2.5 % "
+"1","  97.5 % "
+"1","
+"
+"1","0.387629 "
+"1","1.037877 "
+"1","
+"
