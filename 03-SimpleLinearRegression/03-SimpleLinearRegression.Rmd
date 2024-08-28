@@ -419,7 +419,7 @@ residualPlots(fit1,
               fitted = T, tests = F, quadratic = F)
 ```
 
-# Outliers
+## Outliers
 
 An outlier in simple linear regression is an observation with a very large residual. This can be evaluated by looking at the studentized residuals vs the fitted values. In R, this can be also be done using the `residualPlots()` function and changing the residual type.
 
@@ -435,7 +435,16 @@ You can also use an statistical test for outliers using the `outlierTest()` func
 outlierTest(fit1, n.max = Inf)
 ```
 
-# Influential Observations 
+## Leverage Points 
+
+Leverage points are data points with unusual predictor values compared to the rest of the data. Leverage values can be calculated using the `hatvalues()` function. 
+
+```{r}
+hatvalues(fit1) %>% sort(decreasing = TRUE)
+```
+
+
+## Influential Observations 
 
 Influential observations are ones that alter the regression coefficients by a significant amount when they are included in the model. To test the influence of a point, you can compare the regression coefficient estimates including the point to the ones without including the point in the sample. 
 
@@ -447,7 +456,7 @@ influenceIndexPlot(fit1, vars = "Cook")
 ols_plot_dfbetas(fit1)
 ```
 
-# Functional Form
+## Functional Form
 
 For the NHANES example, we saw when checking the assumptions that the linearity assumption was not violated. In order to explore other functional forms of the predictor, we will use a different example, from the UNHDD dataset. We want to quantify the effect of female education on adult female mortality. 
 
