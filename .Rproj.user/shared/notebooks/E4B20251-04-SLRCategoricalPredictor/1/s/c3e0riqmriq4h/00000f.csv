@@ -1,3 +1,0 @@
-"0","ggplot(residuals_fit1, aes(sample = standardized_resid)) +"
-"0","  stat_qq(size = 2.5, color = 'red') +"
-"0","  stat_qq_line()"

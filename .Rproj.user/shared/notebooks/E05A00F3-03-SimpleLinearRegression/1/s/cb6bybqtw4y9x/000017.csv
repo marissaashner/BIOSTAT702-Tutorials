@@ -1,0 +1,9 @@
+"0","# Generate predictions with prediction intervals"
+"0","pred <- predict(fit1, newdata = nhanesf, interval = ""prediction"")"
+"0",""
+"0","# Combine with original data"
+"0","nhanesf <- cbind(nhanesf, pred)"
+"0",""
+"0","ggplot(data = nhanesf, aes(BMXWAIST, LBDGLUSI)) + geom_point() + geom_smooth(method = lm, se = FALSE) + geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.5)"
+"1","[38;5;232m`geom_smooth()` using formula = 'y ~ x'[39m
+"

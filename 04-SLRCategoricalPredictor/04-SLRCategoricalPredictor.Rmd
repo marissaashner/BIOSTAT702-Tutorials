@@ -2,7 +2,7 @@
 title: "BIOSTAT702 R Tutorial 4: "
 subtitle: "Simple Linear Regression with a Categorical Predictor"
 author: "Marissa Ashner, PhD"
-date: "Last Updated: 2024-08-12"
+date: "Last Updated: 2024-09-10"
 output: 
   html_document:
     theme: cosmo
@@ -173,6 +173,7 @@ Use the following code to get the F-test information from `lm()`.
 fit1_summary = summary(fit1)
 fit1_summary$fstatistic
 ```
+
 ## F-Test from anova()
 
 The F-test from `lm()` will be equivalent to the one from `anova()`. 
@@ -180,6 +181,7 @@ The F-test from `lm()` will be equivalent to the one from `anova()`.
 ```{r}
 anova(fit1)
 ```
+
 ## F-Test from Anova() 
 
 There is another function called `Anova()` in the `car` package that can test the significance of a categorical predictor without running a global test, using what is called a Type III test. This will be important for multivariable linear regression, but right now will get us the same answer as the other F-tests. 
@@ -203,6 +205,43 @@ L = rbind(c(0, 1, 0), c(0, 0, 1))
 esticon(fit1, L, conf.int = TRUE, joint.test = TRUE)
 ```
 
+## Pairwise Predictions and Multiple Testing
+
+Since the F-test comparing all three group means is statistically significant, this suggests that at least one of the three group means is different than the others, which warrants further investigation. We can also use the `esticon()` function to run 3-pairwise tests comparing each pair of group means simultaneously. The way our variable is coded, 
+
+Never Smoker: $\beta_0$
+Past Smoker: $\beta_0 + \beta_1$ 
+Current Smoker: $\beta_0 + \beta_2$
+
+Therefore, to test the null hypothesis that never and past smoker have equal group means, we can test $\beta_0 = \beta_0 + \beta_1 \implies \beta_1 = 0$. Similarly, for never and current smoker, we can test $\beta_2 = 0$. To compare past and current smoker group means, we can test $\beta_0 + \beta_1 = \beta_0 + \beta_2 \implies \beta_1 -\beta_2 = 0$. This can help to set up our contrast matrix $L$.
+
+```{r}
+# create matrix of coefficients to test 
+# first row tests beta1 = 0
+# second row tests beta2 = 0
+# third row tests beta1-beta2 = 0
+L = rbind(c(0, 1, 0), 
+          c(0, 0, 1) ,
+          c(0, 1, -1))
+
+contrast1 = esticon(fit1, L, conf.int = TRUE) %>% as.data.frame()
+contrast1
+```
+
+Since we are running three simultaneous tests, we might want to control for Type I error by adjusting for multiple tests, using the bonferroni correction, for example. We have to adjust for this after running `esticon()`, using the `p.adjust()` function. We can adjust the CI level in the `esticon()` arguments though. 
+
+```{r}
+contrast2 = esticon(fit1, L, conf.int = TRUE,
+                    # new CI level is 1 - new significance level, which is 0.05 divided by the number of tests
+                    level = 1-0.05/dim(L)[1]
+                    ) %>% as.data.frame()
+
+# adjust p values
+contrast2$p.value = p.adjust(contrast2$p.value, 
+                             method = "bonferroni")
+
+contrast2
+```
 
 ## Nice-Looking Summary Table 
 

@@ -302,6 +302,8 @@ anova_fit1 = anova(fit1)
 anova_fit1
 ```
 
+## The $R^2$ Statistic 
+
 The $R^2$ statistic can also be derived from the ANOVA table as it is the sum of squares of the model divided by the total sum of squares. You can see that this is the same value as from the `lm` output.
 
 ```{r}
@@ -313,7 +315,6 @@ r2_anova
 
 r2_lm
 ```
-
 
 # Equivalent Tests
 

@@ -1,6 +1,0 @@
-"0","ggplot(data = nhanesf, aes(BMXWAIST, LBDGLUSI, color= RIAGENDR)) + 
-  geom_point() + 
-  geom_smooth(method = ""lm"", se= FALSE)
-"
-"1","[38;5;232m`geom_smooth()` using formula = 'y ~ x'[39m
-"

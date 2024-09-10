@@ -1,5 +1,0 @@
-"0","nhanesf %>% group_by(RIAGENDR, cvd) %>% 
-  summarise(groupmeans = mean(LBDGLUSI))
-"
-"1","[38;5;232m`summarise()` has grouped output by 'RIAGENDR'. You can override using the `.groups` argument.[39m
-"

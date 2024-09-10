@@ -1,4 +1,7 @@
+"0","# fit the model "
 "0","fit1 <- lm(LBDGLUSI ~ BMXWAIST, data = nhanesf)"
+"0",""
+"0","# output the results "
 "0","summary(fit1)"
 "1","
 Call:
