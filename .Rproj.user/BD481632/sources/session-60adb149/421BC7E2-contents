@@ -1,0 +1,318 @@
+---
+title: "BIOSTAT 702: Exercise 14"
+subtitle: "Chi-Square: 2x2 Tables Unstratified and Stratified"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: 
+  pdf_document:
+    number_sections: false
+    toc: true
+    toc_depth: 3
+    extra_dependencies: ["color"]
+urlcolor: blue
+header-includes: 
+   - \usepackage{tabularx}
+   - \usepackage{booktabs}
+   - \usepackage{float}
+   - \newcommand{\benum}{\begin{enumerate}}
+   - \newcommand{\eenum}{\end{enumerate}}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = T)
+options(tinytex.verbose = TRUE)
+
+library(tidyverse)
+library(Hmisc)
+```
+
+# Learning Objectives
+
+\benum
+
+\item Demonstrate the equivalence between a chi-squared analysis and logistic regression for calculating odds ratios 
+\item Practice chi-squared analyses for unstratified and stratified 2x2 tables
+
+
+\eenum
+
+# How to Do This Exercise
+
+We recommend that you read this entire document prior to answering any of the questions. If anything is unclear please ask for help from the instructors or TAs before getting started. You are also allowed to ask for help from the instructors or TAs while you are working on the assignment. You may collaborate with your classmates on this assignment—in fact, we encourage this--and use any technology resources available to you, including Internet searches, generative AI tools, etc. However, if you collaborate with others on this assignment please be aware that \textit{you must submit answers to the questions written in your own words. This means that you should not quote phrases from other sources, including AI tools, even with proper attribution.} Although quoting with proper attribution is good scholarly practice, it will be considered failure to follow the instructions for this assignment and you will be asked to revise and resubmit your answer. In this eventuality, points may be deducted in accordance with the grading rubric for this assignment as described below. Finally, you do not need to cite sources that you used to answer the questions for this assignment.
+
+
+# Grading Rubric
+
+The assignment is worth 20 points (4 points per question). The points for each question are awarded as follows: 3 points for answering all parts of the question and following directions, and 1 point for a correct answer. Partial credit may be awarded at the instructor's discretion.
+
+# Preparation
+
+Here, we consider 2x2 tables where, by construction, both the predictor and the outcome are binary.  For example, the predictor X could denote drug (X=1 for new drug, X=0 for placebo), and Y denote outcome (Y=1 for good outcome, Y=0 for poor outcome).  We will eventually add a stratification variable, which is also categorically scaled.  In general, the number of categories isn't limited to 2.
+
+Plugging in some numbers, in the table below the proportion of good outcomes is 40% for the new drug and only 20% for usual care.
+
+\begin{center}
+\begin{tabular}{|c| c|c|}
+    \hline
+     & $Y=1$ & $Y=0$ \\
+    \hline
+    $X=1$ & 40 &  60 \\
+    \hline
+    $X=0$ & 20 &  80 \\
+        \hline
+\end{tabular}
+\end{center} 
+
+# \# 1
+
+Create point estimates and 95% confidence intervals for the following risk measures. BIOS703 discusses the tradeoffs among them. *Hint:* See R Tutorial 6 for guidance.
+
+```{r}
+# create table in R
+table1 = matrix(c(40, 60, 20, 80), nrow = 2, byrow = TRUE) %>% 
+  as.table()
+
+# Add row and column names
+dimnames(table1) <- list(
+  X = c("1", "0"),
+  Y = c("1", "0")
+)
+
+# Print the table
+print(table1)
+```
+
+
+\benum 
+
+\item The absolute risk (i.e., the risk difference)
+
+\textcolor{red}{The risk difference is 0.2 (95\% CI: 0.076, 0.324).}
+
+```{r}
+catfun::riskdiff(table1)
+```
+
+\item The relative risk 
+
+\textcolor{red}{The relative risk ratio is 2 (95\% CI: 1.26, 3.17).}
+
+```{r}
+epitools::riskratio(table1, 
+          rev = "b")
+```
+
+
+\item The odds ratio
+
+\textcolor{red}{The odds ratio is 2.67 (95\% CI: 1.41, 5.02).}
+
+```{r}
+epitools::oddsratio(table1, 
+                    rev = "b", 
+                    method = "wald")
+```
+
+
+\eenum 
+
+# \# 2
+
+Here, we will use the odds ratio as our measure of risk, because this directly corresponds to the regression coefficient from the logistic regression model.  (More precisely, it corresponds to $\exp\{\beta_1\}$).
+
+**Note:** As mentioned in the course notes, the usual chi-square analysis of the above 2x2 table is essentially equivalent to performing a logistic regression, and your results should be roughly consistent with this.
+
+\benum
+
+\item Use the glm() function R to calculate the odds ratio using logistic regression. *Hint:* You can use the uncount() function from the tidyr package to easily turn your table into a person-level data frame. 
+
+\textcolor{red}{The odds ratio using logistic regression is 2.67, which is equivalent to the result we got previously.}
+
+```{r}
+# create person-level data frame
+data1 = table1 %>% as.data.frame() %>% tidyr::uncount(Freq)
+
+# run logistic regression
+fit1 = glm(Y ~ X, data = data1, 
+           family = "binomial")
+summary(fit1)
+
+# Find OR 
+exp(summary(fit1)$coefficients[,1])
+```
+
+
+\item Calculate a 95% confidence interval.
+
+\textcolor{red}{The 95\% CI is 1.43-5.09, which is slightly wider than our CI previously.}
+
+```{r}
+confint(fit1, parm = "X0") %>% exp()
+```
+
+
+\eenum
+
+# \# 3
+
+Next, consider some stratification variables.  For example, the strata might represent 3 studies, all of which compared the same intervention to usual care (and were otherwise sufficiently comparable).  The investigator is typically interested in 2 questions:
+1.	Is the odds ratio consistent across strata?
+2.	If the odds ratio is sufficiently consistent, what is the average odds ratio?
+
+Assume that the strata represent 3 separate studies.  The intervention and control groups are similar across studies but the patient populations differ, resulting in different outcome rates among the controls.  The raw data are:
+
+\begin{center}
+\begin{tabular}{|c| c|c|}
+    \hline
+    Study & Intervention & Control \\
+    \hline
+    1 & 15/100 &  20/200 \\
+    \hline
+    2 & 50/100 &  20/100 \\
+    \hline
+    3 & 140/200 & 30/100 \\
+        \hline
+\end{tabular}
+\end{center}
+
+Fill in the table below.  How consistent are the odds ratios?
+
+\begin{center}
+\begin{tabular}{|c| c|c|c|}
+    \hline
+    Study & Odds Ratio & 95\% CI & P-value \\
+    \hline
+    1 & 1.588 & (0.775, 3.254) & 0.280 \\
+    \hline
+    2 & 4 & (2.14, 7.49) & 1.71e-05 \\
+    \hline 
+    3 & 5.44 & (3.22, 9.19) & 9.98e-11 \\
+        \hline
+\end{tabular}
+\end{center}
+
+```{r}
+# Create 2x2 for Study 1
+table_s1 = matrix(c(15, 85, 20, 180), nrow = 2, byrow = TRUE) %>% 
+  as.table()
+
+# Add row and column names
+dimnames(table_s1) <- list(
+  Treatment = c("Intervention", "Control"),
+  Outcome = c("1", "0")
+)
+
+# print table for Study 1
+print(table_s1)
+
+# Odds Ratio
+epitools::oddsratio(table_s1, method = "wald", rev = "b", correction = TRUE)
+```
+```{r}
+# Create 2x2 for Study 2
+table_s2 = matrix(c(50, 50, 20, 80), nrow = 2, byrow = TRUE) %>% 
+  as.table()
+
+# Add row and column names
+dimnames(table_s2) <- list(
+  Treatment = c("Intervention", "Control"),
+  Outcome = c("1", "0")
+)
+
+# print table for Study 2
+print(table_s2)
+
+# Odds Ratio
+epitools::oddsratio(table_s2, method = "wald", rev = "b", correction = TRUE)
+```
+
+```{r}
+# Create 2x2 for Study 3
+table_s3 = matrix(c(140, 60, 30, 70), nrow = 2, byrow = TRUE) %>% 
+  as.table()
+
+# Add row and column names
+dimnames(table_s3) <- list(
+  Treatment = c("Intervention", "Control"),
+  Outcome = c("1", "0")
+)
+
+# print table for Study 3
+print(table_s3)
+
+# Odds Ratio
+epitools::oddsratio(table_s3, method = "wald", rev = "b", correction = TRUE)
+```
+
+
+
+# \# 4
+
+You previously demonstrated that you can generate an odds ratio estimate for a single study using logistic regression.  Do the same thing for the ensemble of 3 studies.  In other words, fit a logistic regression model using the following predictors:
+•	X0=1 for everyone (the intercept)
+•	X1=1 for drug A, 0 otherwise (an indicator for drug)
+•	X2=1 for study 1, 0 otherwise (an indicator for study 1)
+•	X3=1 for study 2, 0 otherwise (an indicator for study 2)
+•	X4=X1*X2 (one part of the drug-by-study interaction)
+•	X5=X1*X3 (the other part of the drug-by-study interaction)
+
+```{r}
+# create person-level data frames for each study
+data_s1 = table_s1 %>% as.data.frame() %>% tidyr::uncount(Freq) %>% mutate(Study = 1)
+data_s2 = table_s2 %>% as.data.frame() %>% tidyr::uncount(Freq) %>% mutate(Study = 2)
+data_s3 = table_s3 %>% as.data.frame() %>% tidyr::uncount(Freq) %>% mutate(Study = 3)
+
+# combine into one data frame 
+data4 = rbind(data_s1, data_s2, data_s3)
+
+# Make sure Intervention is the non-reference group for Treatment
+data4$Treatment = factor(data4$Treatment, levels = c("Control", "Intervention"))
+
+# Turn study into factor variable
+data4$Study = factor(data4$Study, levels = c("3", "2", "1"))
+
+# run logistic regression
+fit4 = glm(Outcome ~ Treatment + Study + Treatment:Study, data = data4, 
+           family = "binomial")
+summary(fit4)
+```
+
+
+\benum
+
+\item What is the p-value for the interaction?  Should you test the interaction in parts (i.e., testing $\beta_4$ and $\beta_5$ separately) or all at once?
+
+\textcolor{red}{We should test the interaction all at once. Doing so, the p-value for the interaction is 0.022.}
+
+```{r}
+car::Anova(fit4, type = 3)
+```
+
+
+\item A good case can be made for arguing that the interaction term, although statistically significant, is practically unimportant.  Why?
+
+\item Assume that the interaction is practically unimportant and refit the model without the interaction terms.  What is the overall estimate of the odds ratio (plus confidence interval and p-value)?
+
+\item Suppose that the investigator tells you that the threshold for practical importance is an odds ratio of 1.50.  What should you conclude?
+
+\eenum
+
+# \# 5
+
+\benum
+
+\item Perform a Cochrane-Mantel-Haentzel analysis.  Did you obtain similar results?
+
+\item One way to describe what you've done is that you've "combined the conclusions of the 3 studies but haven't combined the data".  To demonstrate this, make a single 2x2 table containing all of the patients from the 3 studies (i.e., don't keep track of the study).  Estimate an odds ratio from the combined data.  
+
+\item In plain English, explain why (1) the odds ratio from the combined dataset differs from the odds ratio that you obtained after accounting for the stratification; and (2) what's wrong with simply combining all the data into a single dataset.
+
+\eenum
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,321 @@
+---
+title: "BIOSTAT 702: Exercise 12"
+subtitle: "Logistic Regression: Categorical Predictor"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: 
+  pdf_document:
+    number_sections: false
+    toc: true
+    toc_depth: 3
+    extra_dependencies: ["color"]
+urlcolor: blue
+header-includes: 
+   - \usepackage{tabularx}
+   - \usepackage{booktabs}
+   - \usepackage{float}
+   - \newcommand{\benum}{\begin{enumerate}}
+   - \newcommand{\eenum}{\end{enumerate}}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = T)
+options(tinytex.verbose = TRUE)
+
+library(tidyverse)
+library(Hmisc)
+```
+
+# Learning Objectives
+
+\benum
+
+\item Practice performing logistic regression with a categorical variable
+
+
+\eenum
+
+# How to Do This Exercise
+
+We recommend that you read this entire document prior to answering any of the questions. If anything is unclear please ask for help from the instructors or TAs before getting started. You are also allowed to ask for help from the instructors or TAs while you are working on the assignment. You may collaborate with your classmates on this assignment—in fact, we encourage this--and use any technology resources available to you, including Internet searches, generative AI tools, etc. However, if you collaborate with others on this assignment please be aware that \textit{you must submit answers to the questions written in your own words. This means that you should not quote phrases from other sources, including AI tools, even with proper attribution.} Although quoting with proper attribution is good scholarly practice, it will be considered failure to follow the instructions for this assignment and you will be asked to revise and resubmit your answer. In this eventuality, points may be deducted in accordance with the grading rubric for this assignment as described below. Finally, you do not need to cite sources that you used to answer the questions for this assignment.
+
+
+# Grading Rubric
+
+The assignment is worth 16 points (4 points per question). The points for each question are awarded as follows: 3 points for answering all parts of the question and following directions, and 1 point for a correct answer. Partial credit may be awarded at the instructor's discretion.
+
+# Preparation
+
+Consider a randomized trial, whose results are summarized in the table below: 
+
+\begin{center}
+\begin{tabular}{|c| c|c|}
+    \hline
+    & Good outcome & Poor outcome \\
+    \hline
+    Intervention & 35 & 65 \\
+        \hline
+    Control & 20 & 80 \\
+        \hline
+\end{tabular}
+\end{center}
+
+This table also represents the visualization component of the analysis plan.  Indeed, a table isn't needed: we could simply report that the proportion of good outcomes was 35\% (35/100) in the intervention group and 20\% (20/100) in the controls.  Even though you see them in the literature, histograms definitely aren't needed -- there's too little information to be presented.
+
+```{r}
+conting_table = matrix(c(35, 65, 20, 80), byrow = TRUE, nrow = 2)
+dimnames(conting_table) <- list("Treatment" = c("Intervention", "Control"),
+                       "Outcome" = c("Good Outcome", "Poor Outcome")
+                      )
+
+conting_table
+```
+
+
+# Question 1
+
+Calculate point estimates of the following descriptive measures. You can calculate these by hand or using R functions. You might consider using R Tutorial 6 for guidance if you do not want to calculate them by hand.
+
+\benum
+
+\item The risk ratio
+
+\textcolor{red}{The risk ratio estimate is 1.75.}
+
+```{r}
+# using epitools
+epitools::riskratio(conting_table, rev = "b")$measure
+```
+
+\item The odds ratio
+
+\textcolor{red}{The odds ratio estimate is 2.15.}
+
+```{r}
+# using epitools
+epitools::oddsratio(conting_table, rev = "b", method = "wald")$measure
+```
+
+\item The risk difference
+
+\textcolor{red}{The risk difference estimate is 0.15.}
+
+```{r}
+# using catfun
+catfun::riskdiff(conting_table)
+```
+\item Use R to perform a chi-square test.  There are multiple versions of a chi-square test (e.g., with and without continuity correction) -- they are asymptotically equivalent to one another and also to logistic regression.  Use the chisq.test() function with correct=FALSE to perform a score test.  What test statistic and p-value did you obtain?
+
+\textcolor{red}{The test statistic is 5.64 and the p-value is 0.0175.}
+
+```{r}
+chisq.test(conting_table, correct = FALSE)
+```
+ 
+\eenum
+
+# Question 2
+
+Use R to run a logistic regression model treating study group as a classification variable. *Hint:* You can use the uncount() function from the tidyr package to easily turn your table into a person-level data frame. 
+
+```{r}
+# create a data frame
+data = data.frame(group = c(rep("control", 100), 
+                            rep("intervention", 100)), 
+                  outcome = c(rep(0, 80), 
+                              rep(1, 20), 
+                              rep(0, 65), 
+                              rep(1, 35))
+)
+
+# OR 
+# data = conting_table %>% as.data.frame() %>% tidyr::uncount(Freq)
+
+# check that it matches our contingency table
+table(data$group, data$outcome)
+
+# run logistic regression
+glm_fit1 = glm(outcome ~ group, 
+               family = binomial, 
+               data = data)
+```
+
+
+\benum 
+
+\item Save the results into an object and then run summary() on that object.
+
+```{r}
+summary(glm_fit1)
+```
+
+
+\item You should find that the regression coefficient $\beta_1$ is 0.7673.  Transform $\beta_1$ into an odds ratio.
+
+\textcolor{red}{We transform the regression coefficient into an odds ratio by exponentiating it. The odds ratio estimate is 2.15.}
+
+```{r}
+exp(glm_fit1$coefficients)
+```
+
+
+\item Using the parameter estimates and standard errors from the output, calculate a Wald confidence interval for the odds ratio by hand. Is this confidence interval based on any asymptotic assumptions?
+
+\textcolor{red}{This confidence interval is based on the asymptotic assumption that, as the sample size increases, the sampling distribution of the log odds ratio approaches a normal distribution.}
+
+```{r}
+# get estimates for log OR and standard error
+logOR = glm_fit1$coefficients[2]
+seLogOR = summary(glm_fit1)$coefficients[2,2]
+
+# create CI for the log OR 
+lowerLogOR = logOR - qnorm(0.975)*seLogOR
+upperLogOR = logOR + qnorm(0.975)*seLogOR
+
+# exponentiate for CI of OR 
+lowerOR = exp(lowerLogOR)
+upperOR = exp(upperLogOR)
+
+paste0("(", round(lowerOR, 3), ", ", 
+       round(upperOR, 3), ")")
+```
+
+
+\item Now, apply the confint() function to your output object.  Do you get the same result?  Why or why not? \textit{Hint: Look at the documentation for the function.}
+
+\textcolor{red}{The results are not idential, but are about the same. They are different because the confint function actually uses the likelihood ratio test to form the confidence interval rather than the Wald test.}
+
+
+```{r}
+confint(glm_fit1) %>% exp()
+```
+
+
+\item Print the predicted values from your output object.  You should find that the predicted values are all 0.35 for the intervention group and all 0.20 for the controls.  (Depending on how the model is parameterized, they might show up as 0.65 and 0.80, respectively, which is providing essentially the same information.) \textit{Hint: use the type = "response" argument in the predict() function.}
+
+```{r}
+predict(glm_fit1, type = "response") %>% unique()
+```
+
+
+\item Plug X=0 and then X=1 into the formula for the predicted probability of outcome in the logistic regression model.  Do you get 0.35 and 0.20?
+
+\textcolor{red}{Yes, I get the expected values of 0.2 for the control group (X=0) and 0.35 for the intervention group (X=1).}
+
+```{r}
+log_reg_pred = function(X){
+  lin_pred = glm_fit1$coefficients[1] + glm_fit1$coefficients[2]*X
+  return(1/(1+exp(-lin_pred)) %>% unname())
+}
+
+# X = 0
+log_reg_pred(0)
+
+# X = 1
+log_reg_pred(1)
+```
+
+
+\eenum
+
+# Question 3
+
+Switch the definition of the outcome -- in other words, change the values with Y=0 to Y=1 and change the values with Y=1 to Y=0.  Rerun the analysis.  
+
+```{r}
+# switch values 
+data = data %>% mutate(outcome2 = ifelse(outcome == 0, 1, 0))
+
+# run logistic regression
+glm_fit2 = glm(outcome2 ~ group, data = data, 
+               family = binomial)
+summary(glm_fit2)
+```
+
+
+\benum
+
+\item What happens to the parameter estimates?  
+
+\textcolor{red}{The parameter estimates flipped signs.}
+
+\item What happens to the predicted values?
+
+\textcolor{red}{The predicted values are now 1 minus the original predicted values.}
+
+```{r}
+predict(glm_fit2, type = "response") %>% unique()
+```
+
+\item Verify that R's parameter estimates are at least approximately correct by (1) creating the log-likelihood for the data; and then (2) performing a grid search on all possible values of $\beta_0$ from -2 to 2 by .01 and all possible values of $\beta_1$ from -2 to 2 by .01. The maximum value of the log-likelihood should be found near the parameter estimates reported by R.
+
+```{r}
+# create log-likelihood function
+log_likelihood <- function(beta){
+  beta0 = beta[1]
+  beta1 = beta[2]
+  x = ifelse(data$group == "intervention", 1, 0)
+  y = data$outcome2
+  sum(y * (beta0 + beta1 * x) - log(1 + exp(beta0 + beta1 * x)))
+}
+
+# create grid
+grid = expand.grid(beta0 = seq(-2, 2, by = 0.01), 
+                   beta1 = seq(-2, 2, by = 0.01))
+
+# find log likelihood at each value of the grid
+grid$loglikelis = apply(grid, 1, log_likelihood)
+
+# find max log likelihood
+grid %>% filter(loglikelis == max(grid$loglikelis))
+```
+
+
+\eenum
+
+# Question 4
+
+Consider this data table: 
+
+\begin{center}
+\begin{tabular}{|c| c|c|}
+    \hline
+    & Good outcome & Poor outcome \\
+    \hline
+    Intervention & 10 & 0 \\
+        \hline
+    Control & 0 & 10 \\
+        \hline
+\end{tabular}
+\end{center}
+
+
+\benum 
+
+\item What goes wrong when you try to perform a logistic regression? 
+
+\textcolor{red}{While the glm() function handles the perfect separation here with no errors, the standard errors are extremely large and non-sensical.}
+
+```{r}
+# Create dataset 
+data2 = data.frame(group = c(rep("control", 10), 
+                            rep("intervention", 10)), 
+                  outcome = c(rep(0, 10), 
+                              rep(1, 10))
+)
+
+# check that it matches our contingency table
+table(data2$group, data2$outcome)
+
+# run logistic regression
+glm_fit3 = glm(outcome ~ group, 
+               family = binomial, 
+               data = data2)
+summary(glm_fit3)
+```
+
+
+\eenum
+
+
+
+

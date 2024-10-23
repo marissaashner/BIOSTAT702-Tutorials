@@ -1,0 +1,6 @@
+"0","# we want the reference groups to be female and drug A... let's convert them to factors with these levels 
+data$drug = factor(data$drug, levels = c(""A"", ""B""))
+data$gender = factor(data$gender, levels = (""F"", ""M""))
+"
+"2","Error: unexpected ',' in ""data$gender = factor(data$gender, levels = (""F"",""
+"

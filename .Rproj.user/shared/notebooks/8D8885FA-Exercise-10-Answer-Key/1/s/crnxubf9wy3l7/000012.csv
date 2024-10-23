@@ -1,0 +1,5 @@
+"0","data1 %>% group_by(drug, gender) %>% summarise(meanY = mean(y2))
+"
+"1","[38;5;232m`summarise()` has grouped output by 'drug'. You can override using the `.groups`
+argument.[39m
+"

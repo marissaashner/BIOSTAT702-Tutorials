@@ -1,0 +1,5 @@
+"0","knitr::opts_chunk$set(echo = T)"
+"0","options(tinytex.verbose = TRUE)"
+"0",""
+"0","library(tidyverse)"
+"0","library(Hmisc)"

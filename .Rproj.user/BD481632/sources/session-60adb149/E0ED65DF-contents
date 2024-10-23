@@ -1,0 +1,211 @@
+---
+title: "BIOSTAT 702: Exercise 10"
+subtitle: "Simple Linear Regression: 2-Way ANOVA"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: 
+  pdf_document:
+    number_sections: false
+    toc: true
+    toc_depth: 3
+    extra_dependencies: ["color"]
+urlcolor: blue
+header-includes: 
+   - \usepackage{tabularx}
+   - \usepackage{booktabs}
+   - \usepackage{float}
+   - \newcommand{\benum}{\begin{enumerate}}
+   - \newcommand{\eenum}{\end{enumerate}}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = T)
+options(tinytex.verbose = TRUE)
+
+library(tidyverse)
+library(Hmisc)
+```
+
+# Learning Objectives
+
+\benum
+
+\item Illustrate the two-way ANOVA 
+\item Illustrate the concept of interaction 
+\item Illustrate why controlling for a variable "imposes balance"
+
+\eenum
+
+# How to Do This Exercise
+
+We recommend that you read this entire document prior to answering any of the questions. If anything is unclear please ask for help from the instructors or TAs before getting started. You are also allowed to ask for help from the instructors or TAs while you are working on the assignment. You may collaborate with your classmates on this assignment—in fact, we encourage this--and use any technology resources available to you, including Internet searches, generative AI tools, etc. However, if you collaborate with others on this assignment please be aware that \textit{you must submit answers to the questions written in your own words. This means that you should not quote phrases from other sources, including AI tools, even with proper attribution.} Although quoting with proper attribution is good scholarly practice, it will be considered failure to follow the instructions for this assignment and you will be asked to revise and resubmit your answer. In this eventuality, points may be deducted in accordance with the grading rubric for this assignment as described below. Finally, you do not need to cite sources that you used to answer the questions for this assignment.
+
+
+# Grading Rubric
+
+The assignment is worth 16 points (4 points per question). The points for each question are awarded as follows: 3 points for answering all parts of the question and following directions, and 1 point for a correct answer. Partial credit may be awarded at the instructor's discretion.
+
+# Preparation
+
+You will need the "exercise10.csv" dataset.
+
+Let Y denote a continuous outcome variable and X1 and X2 denote 2 predictors of interest.  For example, X1 might denote study group (drug A or drug B) and X2 might denote gender (female or male).  For simplicity, the predictors only have 2 categories.
+
+The table below describes the imbalance in the study: males tend to receive drug A and females tend to receive drug B.  Equivalently, knowing a patient's gender provides information about the drug that they received.
+
+\begin{center}
+\begin{tabular}{|c| c|c|}
+    \hline
+    \textbf{Sample Sizes} & Drug A & Drug B \\
+    \hline
+    Females & 50 & 150 \\
+        \hline
+    Males & 150 & 50 \\
+        \hline
+\end{tabular}
+\end{center}
+
+The table below is balanced.  Patients have a 50% chance or receiving drug A, regardless of gender.
+
+\begin{center}
+\begin{tabular}{|c| c|c|}
+    \hline
+    \textbf{Sample Sizes} & Drug A & Drug B \\
+    \hline
+    Females & 100 & 100 \\
+        \hline
+    Males & 100 & 100 \\
+        \hline
+\end{tabular}
+\end{center}
+
+The table below is also balanced.  Patients have an identical chance of receiving drug A, regardless of gender, even if that probability differs from 50%.  The indicator variables denoting study group and gender will be uncorrelated.
+
+\begin{center}
+\begin{tabular}{|c| c|c|}
+    \hline
+    \textbf{Sample Sizes} & Drug A & Drug B \\
+    \hline
+    Females & 50 & 150 \\
+        \hline
+    Males & 50 & 150 \\
+        \hline
+\end{tabular}
+\end{center}
+
+
+# Question 1
+
+The key inputs to the 2-way ANOVA are the data within each the 4 "cells" of the above 2x2 table, where "cell" denotes a cross-classification of drug and gender.  The visualization exercise proceeds in the usual way, within cell.
+
+The data can be summarized by means, standard deviations and sample sizes within each cell.  The 2-way ANOVA assumes that the standard deviations are the same for each cell, and is robust to anything but large departures from this assumption.  An example summary is provided below.  This was based on the file exercise10.csv.
+
+\begin{center}
+\begin{tabular}{|c| c|c|}
+    \hline
+    \textbf{mean (sd), n} & Drug A & Drug B \\
+    \hline
+    Females & 56.22 (9.82), n = 50 & 68.26 (10.53), n = 20 \\
+        \hline
+    Males & 60.33 (10.80), n = 30 & 70.24 (10.66), n = 40 \\
+        \hline
+\end{tabular}
+\end{center}
+
+In round numbers, drug B leads to a 12-unit increase in outcome for females and a 10-unit increase in outcomes for males.  The difference between this 12- and 10-unit increases is a potential interaction.
+
+\benum
+
+\item Apply the general definition of interaction -- namely, "the impact of X on Y depends on the level of Z" to this situation.  In other words, name this potential interaction more specifically.
+
+\item Much of a 2-way ANOVA involves dealing with this potential interaction.  Before doing so, however, we will illustrate some other concepts. Compare the mean values of Y for 80 patients receiving drug A (mostly females) and the 60 patients receiving drug B (mostly males).  
+
+\item How consistent is this "unadjusted drug effect" when compared with the above gender-specific drug effects?  
+
+\item What happens if gender matters a lot -- for example, if you add 20 to the value of Y for all the males in the data set?  Why?  (When a variable is a confounder, including it in the regression model adjusts for that confounding and "synthetically imposes balance".)
+ 
+\eenum
+
+# Question 2
+
+\benum 
+
+\item Run a 1-way ANOVA with study group (which has 4 categories) as its predictor.  Map the regression coefficients to the 4 predicted cell means. For this question, the associated indicator variables are:
+
+\begin{center}
+\begin{tabular}{|c| c|c|c|c|c|}
+    \hline
+    Drug & Gender & $X_0$ & $X_1$ & $X_2$ & $X_3$ \\
+    \hline
+    A & F & 1 & 0 & 0 & 1 \\
+        \hline
+    B & F & 1 & 1 & 0 & 0 \\
+        \hline
+    A & M & 1 & 0 & 1 & 0 \\
+        \hline 
+    B & M & 1 & 0 & 0 & 0 \\
+        \hline
+\end{tabular}
+\end{center}
+
+\item Consider these 3 contrasts:
+  \subitem Group .5 .5 -.5 -.5
+  \subitem Group .5 -.5 .5 -.5
+  \subitem Group .5 -.5 -.5 .5
+  \subitem Then, match the labels of drug, gender, and the drug*gender interaction with the above contrasts.  In plain English, explain why these labels are appropriate. Then, run these contrasts and output the results. \textit{Note: The contrasts above might not directly correspond to the contrasts you must input into R. Remember how your group variable is coded and what each coefficient actually represents.}
+
+\item Run a 2-way ANOVA with drug, gender, and a drug*gender interaction as its predictors. For this question, the associated indicator variables are:
+
+\begin{center}
+\begin{tabular}{|c| c|c|c|c|c|}
+    \hline
+    Drug & Gender & $X_0$ & $X_1$ & $X_2$ & $X_3$ \\
+    \hline
+    A & F & 1 & 1 & 1 & 1 \\
+        \hline
+    B & F & 1 & 1 & 0 & 0 \\
+        \hline
+    A & M & 1 & 0 & 1 & 0 \\
+        \hline 
+    B & M & 1 & 0 & 0 & 0 \\
+        \hline
+\end{tabular}
+\end{center}
+
+\item Map the regression coefficients to the 4 predicted cell means.  How closely do these track the observed cell means?
+
+\item Using the regression coefficients, what is the impact of drug for females?  What is the impact of drugs for males?  What does the "interaction term" $\beta_3$ represent?  Compare its p-value to the p-value for the appropriate contrast in the 1-way ANOVA model.  Are they identical?
+
+\eenum
+
+# Question 3 
+
+If the interaction term from the above two-way ANOVA is both statistically significant and sufficiently large (in absolute value) to be substantively important, you should (1) keep it in the model; and (2) focus reporting on the interaction.  This will be illustrated later.   
+
+\benum 
+
+\item Here, drop the interaction term and refit a "main effects model". Output the results.
+
+\item Map the regression coefficients to the predicted cell means.  Because the interaction term didn't precisely equal 0 (even though it was statistically indistinguishable from 0), the predicted and observed cell means won't be identical, although they will be close to one another.
+
+
+\item Using these predicted cell means, what is the estimated impact of drug for females?  What is the estimated impact of drug for males?  They should be identical.  Because of this, you can focus your reporting of the impact of drug, and simply note in passing that this analysis appropriately accounts for gender.  Write a very short summary that an investigator can cut and paste into a manuscript.  Assume that the minimum clinically important difference (MCID) for the drug is 5.
+
+
+\eenum 
+
+# Question 4
+
+\benum
+
+\item The p-value for gender is approximately 0.08.  Some analysts would choose to drop gender, and fit a final model with drug as the only predictor.  Some analysts would choose to keep gender, because the scientific questions involved gender.  Add 10 units to the value of Y for all the males in the dataset, and keep gender in the main effects model.  What happens to the parameter estimates for drug and gender?  
+
+\item Add 10 units to the value of Y for males receiving drug B, fit a 2-way ANOVA, and output the results.  
+
+\textbf{Note: }The result is an interaction that is statistically significant but probably not clinically important, because the direction of the drug effect is the same regardless of gender.  A reasonable response would be to report the 4 cell means, note that the interaction is statistically significant, but then fit a main effects model and focus on the overall effect for drug.
+
+
+\item Subtract 15 units from the value of Y for males receiving drug B, fit a 2-way ANOVA, and output the results.  This interaction is both statistically significant and clinically important.  Why? \textit{Hint: }Compare the drug effect for females and the drug effect for males.
+
+
+\eenum
+

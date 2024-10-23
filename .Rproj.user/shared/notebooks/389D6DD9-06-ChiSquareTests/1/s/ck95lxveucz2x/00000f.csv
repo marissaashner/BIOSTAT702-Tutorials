@@ -1,6 +1,4 @@
-"0","chisq.test(table(nhanesf_complete$RIAGENDR, 
-                 nhanesf_complete$ALQ151))
-"
+"0","chisq.test(conting_table)"
 "1","
 "
 "1","	Pearson's Chi-squared test with Yates' continuity correction"
@@ -10,7 +8,7 @@
 "
 "1","data:  "
 "1",""
-"1","table(nhanesf_complete$RIAGENDR, nhanesf_complete$ALQ151)"
+"1","conting_table"
 "1",""
 "1","
 "

@@ -1499,7 +1499,7 @@ border-radius: 0px;
 <h1 class="title toc-ignore">BIOSTAT702 R Tutorial 6:</h1>
 <h3 class="subtitle">Chi-Square Tests</h3>
 <h4 class="author">Marissa Ashner, PhD</h4>
-<h4 class="date">Last Updated: 2024-08-14</h4>
+<h4 class="date">Last Updated: 2024-10-23</h4>
 
 </div>
 
@@ -1613,20 +1613,35 @@ changed with the argument <code>correct = FALSE</code>.</p>
 p-value from the contingency table above. We can see that the chi-square
 p-value lines up with the one from the <code>chisq.test()</code>
 function above.</p>
+<p>Note that for the odds ratio, you should use
+<code>method = &quot;wald&quot;</code> to obtain the same estimate as you would
+from calculating the odds ratio by hand. This is not the default and so
+it must be specified.</p>
+<p>Note that the <code>epitools</code> package assumes that the
+non-reference category of your exposure is in the second row, and the
+outcome equivalent to <span class="math inline">\(1\)</span>, or “Yes”,
+is in the second column. If we assume we want “Male” as the reference
+exposure, our rows are correct. However, our columns are incorrect for
+this package. We can use the <code>rev=&quot;c&quot;</code> argument to reverse
+the columns. You could use <code>rev = &quot;r&quot;</code> or
+<code>rev = &quot;b&quot;</code> to switch the rows or both rows/columns,
+respectively.</p>
 <pre class="r"><code>oddsratio(conting_table, 
+          rev = &quot;c&quot;,
+          method = &quot;wald&quot;,
           correction = TRUE)</code></pre>
 <pre><code>## $data
 ##         
-##          Yes  No Total
-##   Male    83 354   437
-##   Female  45 469   514
-##   Total  128 823   951
+##           No Yes Total
+##   Male   354  83   437
+##   Female 469  45   514
+##   Total  823 128   951
 ## 
 ## $measure
 ##         odds ratio with 95% C.I.
-##          estimate    lower    upper
-##   Male   1.000000       NA       NA
-##   Female 2.437707 1.660337 3.621196
+##           estimate     lower     upper
+##   Male   1.0000000        NA        NA
+##   Female 0.4092275 0.2775725 0.6033276
 ## 
 ## $p.value
 ##         two-sided
@@ -1638,25 +1653,26 @@ function above.</p>
 ## [1] TRUE
 ## 
 ## attr(,&quot;method&quot;)
-## [1] &quot;median-unbiased estimate &amp; mid-p exact CI&quot;</code></pre>
+## [1] &quot;Unconditional MLE &amp; normal approximation (Wald) CI&quot;</code></pre>
 </div>
 <div id="risk-ratio" class="section level2">
 <h2>Risk Ratio</h2>
 <p>We can similarly do this for the risk ratio…</p>
 <pre class="r"><code>riskratio(conting_table, 
+          rev = &quot;c&quot;,
           correction = TRUE)</code></pre>
 <pre><code>## $data
 ##         
-##          Yes  No Total
-##   Male    83 354   437
-##   Female  45 469   514
-##   Total  128 823   951
+##           No Yes Total
+##   Male   354  83   437
+##   Female 469  45   514
+##   Total  823 128   951
 ## 
 ## $measure
 ##         risk ratio with 95% C.I.
-##          estimate    lower   upper
-##   Male   1.000000       NA      NA
-##   Female 1.126388 1.068555 1.18735
+##           estimate     lower     upper
+##   Male   1.0000000        NA        NA
+##   Female 0.4609489 0.3281939 0.6474034
 ## 
 ## $p.value
 ##         two-sided
@@ -1673,21 +1689,24 @@ function above.</p>
 <div id="risk-difference" class="section level2">
 <h2>Risk Difference</h2>
 <p>… and the risk difference, which is done using the
-<code>catfun</code> package.</p>
-<pre class="r"><code>riskdiff(conting_table)</code></pre>
+<code>catfun</code> package. This package assumes the non-reference
+exposure is in the first row and the outcome equal to 1 is in the first
+column. You can also reverse the rows or columns if needed, depending on
+which risk difference you are interested in.</p>
+<pre class="r"><code>riskdiff(conting_table, rev = &quot;r&quot;)</code></pre>
 <pre><code>## 
-## Risk difference: 0.1024 
-## 95% confidence interval: 0.0582 0.1466 
+## Risk difference: -0.1024 
+## 95% confidence interval: -0.0582 -0.1466 
 ## 
-## Proportion 1 = 0.1899 
-## Proportion 2 = 0.0875 
+## Proportion 1 = 0.0875 
+## Proportion 2 = 0.1899 
 ## ---------------------------------------- 
 ## Frequency table: 
 ## 
 ##         
 ##          Yes  No
-##   Male    83 354
-##   Female  45 469</code></pre>
+##   Female  45 469
+##   Male    83 354</code></pre>
 </div>
 </div>
 <div id="chi-square-test-for-unordered-categorical-variables" class="section level1">
